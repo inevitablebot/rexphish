@@ -115,7 +115,7 @@ rexphish/
 ### 1. Clone or download the project
 
 ```bash
-git clone https://github.com/yourname/rexphish.git
+git clone https://github.com/inevitablebot/rexphish.git
 cd rexphish
 ```
 
