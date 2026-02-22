@@ -12,7 +12,7 @@
 **A self-hosted phishing simulation & awareness training platform**
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python)
-![Flask](https://img.shields.io/badge/Flask-3.x-black?style=flat-square&logo=flask)
+![Flask](https://img.shields.io/badge/Flask-2.x-black?style=flat-square&logo=flask)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Windows-blue?style=flat-square&logo=windows)
 
@@ -114,7 +114,7 @@ rexphish/
 ### Step 1 — Clone or download the project
 
 ```bash
-git clone https://github.com/yourname/rexphish.git
+git clone https://github.com/inevitablebot/rexphish.git
 cd rexphish
 ```
 
