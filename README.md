@@ -1,5 +1,3 @@
-# Rex Phish Suite
-
 <div align="center">
 
 ```
@@ -464,5 +462,6 @@ MIT License — use freely for authorized testing and educational purposes.
 <div align="center">
 Made with ◈ by Rex
 </div>
-#   r e x p h i s h  
+#   r e x p h i s h 
+ 
  
