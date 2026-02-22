@@ -1,25 +1,10 @@
-<div align="center">
+# Rex Phish Suite
 
-```
-██████╗ ███████╗██╗  ██╗    ██████╗ ██╗  ██╗██╗███████╗██╗  ██╗
-██╔══██╗██╔════╝╚██╗██╔╝    ██╔══██╗██║  ██║██║██╔════╝██║  ██║
-██████╔╝█████╗   ╚███╔╝     ██████╔╝███████║██║███████╗███████║
-██╔══██╗██╔══╝   ██╔██╗     ██╔═══╝ ██╔══██║██║╚════██║██╔══██║
-██║  ██║███████╗██╔╝ ██╗    ██║     ██║  ██║██║███████║██║  ██║
-╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝    ╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝╚═╝  ╚═╝
-```
+A self-hosted phishing simulation & awareness training platform
 
-**A self-hosted phishing simulation & awareness training platform**
-
-![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python)
-![Flask](https://img.shields.io/badge/Flask-2.x-black?style=flat-square&logo=flask)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-![Platform](https://img.shields.io/badge/Platform-Windows-blue?style=flat-square&logo=windows)
-
-</div>
+![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python) ![Flask](https://img.shields.io/badge/Flask-2.x-black?style=flat-square&logo=flask) ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square) ![Platform](https://img.shields.io/badge/Platform-Windows-blue?style=flat-square&logo=windows)
 
 ---
-
 > ⚠️ **For authorized security testing and awareness training only.**  
 > Never use this tool against systems or individuals without explicit written permission.
 
