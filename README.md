@@ -1,89 +1,27 @@
 # Rex Phish Suite
 
-A self-hosted phishing simulation & awareness training platform
+A self-hosted phishing simulation and awareness training platform.
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python) ![Flask](https://img.shields.io/badge/Flask-2.x-black?style=flat-square&logo=flask) ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square) ![Platform](https://img.shields.io/badge/Platform-Windows-blue?style=flat-square&logo=windows)
-
----
-> ⚠️ **For authorized security testing and awareness training only.**  
+> ⚠️ For authorized security testing and awareness training only.
 > Never use this tool against systems or individuals without explicit written permission.
 
----
-
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Features](#features)
-3. [Project Structure](#project-structure)
-4. [Requirements](#requirements)
-5. [Installation](#installation)
-6. [Configuration (.env)](#configuration-env)
-7. [Running the App](#running-the-app)
-8. [Cloudflare Tunnel Setup](#cloudflare-tunnel-setup)
-9. [Using the Dashboard](#using-the-dashboard)
-10. [Creating a Campaign](#creating-a-campaign)
-11. [Email Body Syntax](#email-body-syntax)
-12. [Analytics Page](#analytics-page)
-13. [Settings Page](#settings-page)
-14. [URL Reference](#url-reference)
-15. [Troubleshooting](#troubleshooting)
-
----
-
-## Overview
-
-Rex Phish Suite is a lightweight, self-hosted phishing simulation tool built with **Flask** and **SQLite**. It lets security professionals and red teams:
-
-- Send targeted phishing emails with embedded tracking links
-- Capture open / click / credential submission events per target
-- View real-time analytics across all campaigns
-- Export captured data as CSV
-
-The UI follows a hacker/cyberpunk terminal aesthetic with a navy + neon palette.
-
----
-
-## Quick Start (short)
-
-1. Clone the repository and change directory:
+## Quick Start
 
 ```bash
 git clone https://github.com/inevitablebot/rexphish.git
 cd rexphish
-```
-
-2. Create and activate a Python virtual environment:
-
-```powershell
 python -m venv venv
 venv\Scripts\activate
-```
-
-3. Install dependencies:
-
-```bash
 pip install -r requirements.txt
-```
-
-4. Create a minimal `.env` file (see `Run scripts & .env` below for details) and start the app:
-
-```powershell
 # Windows one-click
 .\run.bat
-
 # Or manual
-venv\Scripts\activate
 python app.py
 ```
 
----
+## Minimal .env example
 
-## Run scripts & .env (examples)
-
-- `run.bat`: Windows helper that creates/activates the venv, installs dependencies, and launches the dev server. Use this for quick local runs.
-- `start_tunnel.bat`: Starts a Cloudflare quick tunnel (if you placed `cloudflared.exe` in the repo).
-
-Minimal `.env` example (DO NOT commit your real secrets):
+Create a file named `.env` in the project root with these values (do not commit secrets):
 
 ```env
 ADMIN_USERNAME=admin
@@ -95,50 +33,13 @@ MAIL_PORT=587
 PUBLIC_URL=
 ```
 
-Tips:
-- Use a strong `SECRET_KEY` (generate with Python: `python -c "import secrets; print(secrets.token_hex(32))"`).
-- For sending email via Gmail, create an App Password and put it in the campaign form (not in `.env`).
----
+## Quick Reference
 
-## Features
+- Start tunnel: use `start_tunnel.bat` with `cloudflared.exe` placed in the repo.
+- Access admin: http://localhost:5000/admin/login
+- Templates: `templates/` contains the UI pages; `static/` has images.
 
-| Feature | Description |
-|---|---|
-| 📧 Campaign emails | Send HTML emails with custom subject & body via Gmail SMTP |
-| 🔗 Tracking links | Per-target UUID tracking for opens, clicks, and form submissions |
-| 📊 Analytics | Real-time stats: open rate, click rate, credential capture rate |
-| 📋 Data export | CSV export of all targets + captured credentials per campaign |
-| ⚙️ Settings | Admin credential management, system info, DB purge |
-| 🔒 Localhost restriction | Admin panel only accessible from `127.0.0.1` by default |
-| 🌐 Cloudflare tunnel | Public URL via `cloudflared` for remote phishing simulations |
-
----
-
-## Project Structure
-
-```
-rexphish/
-├── app.py                  # Main Flask application & all routes
-├── config.py               # Config loader (reads from .env)
-├── models.py               # SQLAlchemy DB models
-├── email_service.py        # SMTP email sending with tracking
-├── requirements.txt        # Python dependencies
-├── .env                    # 🔑 Your secrets (never commit this)
-├── .gitignore
-├── run.bat                 # One-click start script (Windows)
-├── start_tunnel.bat        # Cloudflare tunnel helper (Windows)
-│
-├── templates/
-│   ├── admin_login.html    # Login page
-│   ├── dashboard.html      # Campaign creation & listing
-│   ├── campaign_details.html  # Per-campaign target table
-│   ├── analytics.html      # Stats & event feed
-│   ├── settings.html       # Admin credentials & preferences
-│   └── landing.html        # Phishing landing page (credential capture)
-│
-└── static/
-    └── rex_logo.svg        # App logo
-```
+If the README still appears unrendered on GitHub, open the repository page and confirm you're viewing the repository root (not the raw file view). If you need, I can also open the remote file as GitHub serves it to diagnose further.
 
 ---
 
