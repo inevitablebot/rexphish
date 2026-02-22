@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rex | Analytics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --green: #00ff88;
+            --green-dim: #39ff8f;
+            --cyan: #00d4ff;
+            --cyan-dim: #0dcaf0;
+            --yellow: #aaff00;
+            --red: #ff4444;
+            --bg: #0a1628;
+            --bg2: #0f1f35;
+            --bg3: #1a2d4a;
+            --card: rgba(15, 31, 53, 0.95);
+            --text-primary: #ffffff;
+            --text-secondary: #8899aa;
+            --text-body: #c5d0db;
+            --border: #1e3a5f;
+            --border-glow: rgba(0, 212, 255, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text-body);
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        /* ── SIDEBAR ─────────────────────────────────────────── */
+        .sidebar {
+            width: 240px;
+            min-height: 100vh;
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 1.2rem;
+            gap: 2rem;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .sidebar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 1px;
+            background: linear-gradient(180deg, transparent, var(--cyan), var(--green), transparent);
+            opacity: 0.35;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo-area img {
+            width: 44px;
+            height: 44px;
+            filter: drop-shadow(0 0 6px var(--green)) drop-shadow(0 0 16px rgba(0, 212, 255, 0.25));
+        }
+
+        .logo-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: var(--green);
+            text-shadow: 0 0 8px var(--green);
+            letter-spacing: 3px;
+        }
+
+        .logo-tagline {
+            font-size: 0.55rem;
+            color: var(--cyan-dim);
+            letter-spacing: 2px;
+        }
+
+        .nav-section-label {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            letter-spacing: 3px;
+            padding: 0 0.5rem;
+            margin-bottom: 0.4rem;
+        }
+
+        nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .nav-item {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.6rem 0.75rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .nav-item .nav-icon {
+            font-size: 0.9rem;
+        }
+
+        .nav-item.active,
+        .nav-item:hover {
+            background: rgba(0, 212, 255, 0.07);
+            border-color: var(--border-glow);
+            color: var(--cyan);
+            text-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+        }
+
+        .nav-item.danger {
+            color: rgba(255, 80, 80, 0.7);
+        }
+
+        .nav-item.danger:hover {
+            background: rgba(255, 60, 60, 0.07);
+            border-color: rgba(255, 80, 80, 0.3);
+            color: var(--red);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .sidebar-status {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+        }
+
+        .dot-green {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 5px var(--green);
+            margin-right: 5px;
+        }
+
+        /* ── MAIN ────────────────────────────────────────────── */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.6rem 2rem;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.8rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .topbar-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            color: var(--cyan);
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .topbar-title::before {
+            content: '> ';
+            color: var(--green);
+        }
+
+        /* ── STAT CARDS ──────────────────────────────────────── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1.1rem 1.2rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.08);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+        }
+
+        .stat-card.c-cyan::before {
+            background: var(--cyan);
+            box-shadow: 0 0 8px var(--cyan);
+        }
+
+        .stat-card.c-green::before {
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+        }
+
+        .stat-card.c-yellow::before {
+            background: var(--yellow);
+            box-shadow: 0 0 8px var(--yellow);
+        }
+
+        .stat-card.c-red::before {
+            background: var(--red);
+            box-shadow: 0 0 8px var(--red);
+        }
+
+        .stat-label {
+            font-size: 0.62rem;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .stat-card.c-cyan .stat-value {
+            color: var(--cyan);
+            text-shadow: 0 0 12px rgba(0, 212, 255, 0.5);
+        }
+
+        .stat-card.c-green .stat-value {
+            color: var(--green);
+            text-shadow: 0 0 12px rgba(0, 255, 136, 0.5);
+        }
+
+        .stat-card.c-yellow .stat-value {
+            color: var(--yellow);
+            text-shadow: 0 0 12px rgba(170, 255, 0, 0.5);
+        }
+
+        .stat-card.c-red .stat-value {
+            color: var(--red);
+            text-shadow: 0 0 12px rgba(255, 60, 60, 0.5);
+        }
+
+        .stat-sub {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            margin-top: 0.4rem;
+            letter-spacing: 1px;
+        }
+
+        /* ── GRID LAYOUT ─────────────────────────────────────── */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ── CARD ────────────────────────────────────────────── */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.04);
+        }
+
+        .card-header {
+            background: rgba(0, 212, 255, 0.05);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .card-header-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            color: var(--cyan);
+            letter-spacing: 3px;
+            text-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+        }
+
+        .card-body {
+            padding: 1rem 1.2rem;
+        }
+
+        /* ── CAMPAIGN TABLE ──────────────────────────────────── */
+        .camp-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .camp-table th {
+            padding: 0.6rem 0.8rem;
+            text-align: left;
+            font-size: 0.6rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .camp-table td {
+            padding: 0.7rem 0.8rem;
+            font-size: 0.75rem;
+            border-bottom: 1px solid rgba(30, 58, 95, 0.4);
+            vertical-align: middle;
+        }
+
+        .camp-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .camp-table tr:hover td {
+            background: rgba(0, 212, 255, 0.025);
+        }
+
+        .camp-name-link {
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: color 0.2s;
+            letter-spacing: 0.3px;
+        }
+
+        .camp-name-link:hover {
+            color: var(--cyan);
+            text-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+        }
+
+        /* ── RATE BAR ────────────────────────────────────────── */
+        .rate-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .rate-bar-track {
+            flex: 1;
+            height: 4px;
+            background: var(--bg3);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .rate-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.6s ease;
+        }
+
+        .rate-bar-fill.green {
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+        }
+
+        .rate-bar-fill.yellow {
+            background: var(--yellow);
+            box-shadow: 0 0 6px var(--yellow);
+        }
+
+        .rate-bar-fill.cyan {
+            background: var(--cyan);
+            box-shadow: 0 0 6px var(--cyan);
+        }
+
+        .rate-val {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            width: 36px;
+            text-align: right;
+        }
+
+        /* ── EVENTS FEED ─────────────────────────────────────── */
+        .events-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 340px;
+            overflow-y: auto;
+        }
+
+        .event-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            background: rgba(26, 45, 74, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            font-size: 0.72rem;
+            letter-spacing: 0.3px;
+            transition: border-color 0.2s;
+        }
+
+        .event-row:hover {
+            border-color: var(--border-glow);
+        }
+
+        .event-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+
+        .ev-open {
+            background: var(--yellow);
+            box-shadow: 0 0 5px var(--yellow);
+        }
+
+        .ev-click {
+            background: var(--cyan);
+            box-shadow: 0 0 5px var(--cyan);
+        }
+
+        .ev-submit {
+            background: var(--green);
+            box-shadow: 0 0 5px var(--green);
+        }
+
+        .event-info {
+            flex: 1;
+        }
+
+        .event-type {
+            font-size: 0.6rem;
+            letter-spacing: 2px;
+            font-weight: 400;
+            margin-bottom: 1px;
+        }
+
+        .ev-open .event-type {
+            color: var(--yellow);
+        }
+
+        .event-email {
+            color: var(--text-primary);
+        }
+
+        .event-time {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .event-ip {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+        }
+
+        .ev-type-label {
+            font-size: 0.6rem;
+            letter-spacing: 2px;
+        }
+
+        .ev-type-open {
+            color: var(--yellow);
+        }
+
+        .ev-type-click {
+            color: var(--cyan);
+        }
+
+        .ev-type-submit {
+            color: var(--green);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 2rem;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 1100px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                flex-direction: column;
+                overflow: auto;
+            }
+
+            .sidebar {
+                width: 100%;
+                min-height: auto;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo-area">
+            <img src="{{ url_for('static', filename='rex_logo.svg') }}" alt="Rex">
+            <div>
+                <div class="logo-name">REX</div>
+                <div class="logo-tagline">PHISH SUITE v2</div>
+            </div>
+        </div>
+        <div>
+            <div class="nav-section-label">NAVIGATION</div>
+            <nav>
+                <a href="/" class="nav-item"><span class="nav-icon">⬡</span> Dashboard</a>
+                <a href="/analytics" class="nav-item active"><span class="nav-icon">◈</span> Analytics</a>
+                <a href="/settings" class="nav-item"><span class="nav-icon">◇</span> Settings</a>
+            </nav>
+        </div>
+        <div class="sidebar-footer">
+            <a href="/admin/logout" class="nav-item danger" style="text-decoration:none;">
+                <span class="nav-icon">⏏</span> Logout
+            </a>
+            <div class="sidebar-status" style="margin-top:1rem; padding:0 0.5rem;">
+                <span class="dot-green"></span>SYSTEM ONLINE
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main-content">
+        <div class="topbar">
+            <span class="topbar-title">ANALYTICS</span>
+            <span style="font-size:0.65rem; color:var(--text-secondary); letter-spacing:1px;"
+                id="a-clock">--:--:--</span>
+        </div>
+
+        <!-- STAT CARDS -->
+        <div class="stats-grid">
+            <div class="stat-card c-cyan">
+                <div class="stat-label">TOTAL CAMPAIGNS</div>
+                <div class="stat-value">{{ stats.total_campaigns }}</div>
+                <div class="stat-sub">ALL TIME</div>
+            </div>
+            <div class="stat-card c-green">
+                <div class="stat-label">EMAILS SENT</div>
+                <div class="stat-value">{{ stats.total_sent }}</div>
+                <div class="stat-sub">{{ stats.total_targets }} TARGETS</div>
+            </div>
+            <div class="stat-card c-yellow">
+                <div class="stat-label">TOTAL CLICKS</div>
+                <div class="stat-value">{{ stats.total_clicks }}</div>
+                <div class="stat-sub">LINK INTERACTIONS</div>
+            </div>
+            <div class="stat-card c-red">
+                <div class="stat-label">CREDENTIALS CAPTURED</div>
+                <div class="stat-value">{{ stats.total_submits }}</div>
+                <div class="stat-sub">FORM SUBMISSIONS</div>
+            </div>
+        </div>
+
+        <!-- CONTENT GRID -->
+        <div class="content-grid">
+            <!-- Campaign breakdown table -->
+            <div class="card">
+                <div class="card-header">
+                    <span style="font-size:0.9rem;">📊</span>
+                    <span class="card-header-title">CAMPAIGN BREAKDOWN</span>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="camp-table">
+                        <thead>
+                            <tr>
+                                <th>Campaign</th>
+                                <th>Targets</th>
+                                <th>Opens</th>
+                                <th>Clicks</th>
+                                <th>Captures</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in campaign_rows %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('campaign_details', campaign_id=row.id) }}"
+                                        class="camp-name-link">
+                                        {{ row.name }}
+                                    </a>
+                                    <div style="font-size:0.6rem;color:var(--text-secondary);margin-top:2px;">
+                                        {{ row.date }}
+                                    </div>
+                                </td>
+                                <td style="color:var(--text-primary);">{{ row.total }}</td>
+                                <td>
+                                    <div class="rate-wrap">
+                                        <div class="rate-bar-track">
+                                            <div class="rate-bar-fill yellow" data-w="{{ row.open_pct }}"></div>
+                                        </div>
+                                        <span class="rate-val">{{ row.open_pct }}%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="rate-wrap">
+                                        <div class="rate-bar-track">
+                                            <div class="rate-bar-fill cyan" data-w="{{ row.click_pct }}"></div>
+                                        </div>
+                                        <span class="rate-val">{{ row.click_pct }}%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="rate-wrap">
+                                        <div class="rate-bar-track">
+                                            <div class="rate-bar-fill green" data-w="{{ row.submit_pct }}"></div>
+                                        </div>
+                                        <span class="rate-val">{{ row.submit_pct }}%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5">
+                                    <div class="empty-state">// No campaigns yet</div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent events feed -->
+            <div class="card">
+                <div class="card-header">
+                    <span style="font-size:0.9rem;">⚡</span>
+                    <span class="card-header-title">RECENT EVENTS</span>
+                </div>
+                <div class="card-body">
+                    <div class="events-feed">
+                        {% for ev in recent_events %}
+                        <div class="event-row">
+                            <div class="event-dot ev-{{ ev.type }}"></div>
+                            <div class="event-info">
+                                <div>
+                                    <span class="ev-type-label ev-type-{{ ev.type }}">{{ ev.type | upper }}</span>
+                                    &nbsp;—&nbsp;
+                                    <span class="event-email">{{ ev.email }}</span>
+                                </div>
+                                <div class="event-time">{{ ev.timestamp }}</div>
+                                {% if ev.ip %}
+                                <div class="event-ip">IP: {{ ev.ip }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="empty-state">// No events recorded yet</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Apply rate bar widths from data attributes (avoids CSS-linter conflicts with Jinja)
+        document.querySelectorAll('.rate-bar-fill[data-w]').forEach(el => {
+            el.style.width = el.dataset.w + '%';
+        });
+
+        function updateClock() {
+            const n = new Date();
+            const pad = v => String(v).padStart(2, '0');
+            document.getElementById('a-clock').textContent =
+                `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        // Auto-refresh every 30s
+        setTimeout(() => location.reload(), 30000);
+    </script>
+</body>
+
+</html>

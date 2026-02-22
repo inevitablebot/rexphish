@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rex | Secure Access Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --green: #00ff88;
+            --green-dim: #39ff8f;
+            --cyan: #00d4ff;
+            --cyan-dim: #0dcaf0;
+            --yellow: #aaff00;
+            --red: #ff3333;
+            --bg: #0a1628;
+            --bg2: #0f1f35;
+            --bg3: #1a2d4a;
+            --card: rgba(15, 31, 53, 0.92);
+            --text-primary: #ffffff;
+            --text-secondary: #8899aa;
+            --text-body: #c5d0db;
+            --border: #1e3a5f;
+            --border-glow: rgba(0, 212, 255, 0.35);
+            --border-active: rgba(0, 212, 255, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text-body);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Matrix Rain Canvas */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.14;
+        }
+
+        /* Scanlines overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 0, 0, 0.08) 2px,
+                    rgba(0, 0, 0, 0.08) 4px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Vignette */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.75) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Top status bar */
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 28px;
+            background: rgba(0, 212, 255, 0.05);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            z-index: 10;
+        }
+
+        .status-bar .blink {
+            color: var(--cyan);
+            animation: blink 1.2s step-end infinite;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            margin-right: 6px;
+            box-shadow: 0 0 6px var(--green);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* Main container */
+        .container {
+            position: relative;
+            z-index: 5;
+            width: 100%;
+            max-width: 420px;
+            padding: 1rem;
+        }
+
+        /* Terminal card */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0;
+            box-shadow:
+                0 0 0 1px rgba(0, 212, 255, 0.08),
+                0 0 30px rgba(0, 212, 255, 0.12),
+                0 0 80px rgba(0, 212, 255, 0.05),
+                inset 0 0 40px rgba(0, 212, 255, 0.03);
+            backdrop-filter: blur(12px);
+            overflow: hidden;
+            animation: fadeIn 0.6s ease;
+        }
+
+        /* Card title bar */
+        .card-titlebar {
+            background: rgba(0, 212, 255, 0.06);
+            border-bottom: 1px solid var(--border);
+            padding: 0.55rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .titlebar-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .td-red {
+            background: #ff5f57;
+            box-shadow: 0 0 6px #ff5f57;
+        }
+
+        .td-amber {
+            background: #febc2e;
+            box-shadow: 0 0 6px #febc2e;
+        }
+
+        .td-green {
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+        }
+
+        .titlebar-text {
+            margin-left: auto;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+        }
+
+        /* Card body */
+        .card-body {
+            padding: 1.8rem 2rem 2rem;
+        }
+
+        /* Logo section */
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .logo-img {
+            width: 56px;
+            height: 56px;
+            filter: drop-shadow(0 0 8px var(--green)) drop-shadow(0 0 20px rgba(0, 255, 136, 0.35)) drop-shadow(0 0 30px rgba(0, 212, 255, 0.2));
+            animation: logoFloat 4s ease-in-out infinite;
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--green);
+            text-shadow: 0 0 10px var(--green), 0 0 30px rgba(0, 255, 136, 0.45), 0 0 50px rgba(0, 212, 255, 0.2);
+            letter-spacing: 4px;
+            line-height: 1;
+        }
+
+        .logo-subtitle {
+            font-size: 0.6rem;
+            color: var(--cyan-dim);
+            letter-spacing: 3px;
+            margin-top: 3px;
+        }
+
+        /* Separator line */
+        .sep {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            margin: 1rem 0 1.4rem;
+            opacity: 0.35;
+        }
+
+        /* Access prompt */
+        .prompt-header {
+            font-size: 0.7rem;
+            color: var(--text-body);
+            margin-bottom: 1.2rem;
+            letter-spacing: 1px;
+        }
+
+        .prompt-header::before {
+            content: '> ';
+            color: var(--cyan);
+        }
+
+        /* Form styles */
+        .form-group {
+            margin-bottom: 1.1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.68rem;
+            color: var(--cyan-dim);
+            letter-spacing: 2px;
+            margin-bottom: 0.4rem;
+        }
+
+        label::before {
+            content: '// ';
+            color: rgba(0, 212, 255, 0.4);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-prefix {
+            position: absolute;
+            left: 10px;
+            color: var(--cyan);
+            font-size: 0.9rem;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.7rem 0.75rem 0.7rem 1.8rem;
+            background: rgba(26, 45, 74, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            color: var(--text-primary);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.25s;
+            letter-spacing: 1px;
+        }
+
+        input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        input:focus {
+            border-color: var(--cyan);
+            background: rgba(0, 212, 255, 0.06);
+            box-shadow: 0 0 0 1px var(--cyan), 0 0 15px rgba(0, 212, 255, 0.2), inset 0 0 10px rgba(0, 212, 255, 0.04);
+        }
+
+        /* Submit button */
+        .btn-submit {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(0, 212, 255, 0.07);
+            border: 1px solid var(--cyan);
+            border-radius: 2px;
+            color: var(--cyan);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
+            letter-spacing: 4px;
+            cursor: pointer;
+            margin-top: 0.6rem;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+            text-shadow: 0 0 8px var(--cyan);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.15), inset 0 0 15px rgba(0, 212, 255, 0.05);
+        }
+
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.18), transparent);
+            transition: left 0.4s;
+        }
+
+        .btn-submit:hover::before {
+            left: 100%;
+        }
+
+        .btn-submit:hover {
+            background: rgba(0, 212, 255, 0.15);
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.4), inset 0 0 20px rgba(0, 212, 255, 0.1);
+            color: #fff;
+            text-shadow: 0 0 12px var(--cyan);
+        }
+
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+
+        /* Error message */
+        .error-box {
+            background: rgba(255, 40, 40, 0.07);
+            border: 1px solid rgba(255, 60, 60, 0.45);
+            color: #ff7777;
+            padding: 0.65rem 0.85rem;
+            border-radius: 2px;
+            font-size: 0.75rem;
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+            box-shadow: 0 0 15px rgba(255, 40, 40, 0.1);
+        }
+
+        .error-box::before {
+            content: '[ERR] ';
+            color: var(--red);
+            font-weight: bold;
+        }
+
+        /* Footer area */
+        .card-footer {
+            padding: 0.6rem 1rem;
+            border-top: 1px solid var(--border);
+            background: rgba(0, 212, 255, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.58rem;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+        }
+
+        .footer-id {
+            color: var(--cyan-dim);
+        }
+
+        /* Warning below card */
+        .warn-text {
+            text-align: center;
+            font-size: 0.6rem;
+            color: rgba(136, 153, 170, 0.55);
+            margin-top: 1rem;
+            letter-spacing: 1px;
+        }
+
+        /* Animations */
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 6px var(--green);
+            }
+
+            50% {
+                opacity: 0.6;
+                box-shadow: 0 0 14px var(--green);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes logoFloat {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-4px);
+            }
+        }
+
+        @keyframes glitch {
+
+            0%,
+            85%,
+            100% {
+                clip-path: none;
+                transform: none;
+            }
+
+            86% {
+                clip-path: inset(30% 0 50% 0);
+                transform: translateX(-4px);
+            }
+
+            88% {
+                clip-path: inset(60% 0 10% 0);
+                transform: translateX(4px);
+            }
+
+            90% {
+                clip-path: inset(10% 0 70% 0);
+                transform: translateX(-2px);
+            }
+
+            92% {
+                clip-path: none;
+                transform: none;
+            }
+        }
+
+        .logo-title {
+            animation: glitch 8s ease-in-out infinite;
+        }
+
+        /* Typing cursor */
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 14px;
+            background: var(--cyan);
+            margin-left: 3px;
+            vertical-align: middle;
+            animation: blink 1s step-end infinite;
+            box-shadow: 0 0 5px var(--cyan);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="matrix-canvas"></canvas>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+        <span><span class="status-dot"></span>SECURE CHANNEL ESTABLISHED</span>
+        <span id="clock">00:00:00</span>
+        <span>NODE: <span class="blink">REX-0x1</span> &nbsp;|&nbsp; ENC: AES-256</span>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <!-- Title bar -->
+            <div class="card-titlebar">
+                <span class="titlebar-dot td-red"></span>
+                <span class="titlebar-dot td-amber"></span>
+                <span class="titlebar-dot td-green"></span>
+                <span class="titlebar-text">TERMINAL://access.rex.net — bash</span>
+            </div>
+
+            <!-- Card body -->
+            <div class="card-body">
+                <!-- Logo -->
+                <div class="logo-area">
+                    <img src="{{ url_for('static', filename='rex_logo.svg') }}" alt="Rex" class="logo-img">
+                    <div class="logo-text">
+                        <span class="logo-title">REX</span>
+                        <span class="logo-subtitle">PHISH OPERATOR SUITE</span>
+                    </div>
+                </div>
+
+                <hr class="sep">
+
+                <div class="prompt-header">
+                    AUTHENTICATE TO GAIN ACCESS<span class="cursor"></span>
+                </div>
+
+                {% if error %}
+                <div class="error-box">{{ error }}</div>
+                {% endif %}
+
+                <form method="POST" autocomplete="off">
+                    <div class="form-group">
+                        <label>IDENTIFIER</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">›</span>
+                            <input type="text" name="username" autofocus required placeholder="root@rex">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>PASSPHRASE</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">›</span>
+                            <input type="password" name="password" required placeholder="••••••••••••">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">[ INITIALIZE ACCESS ]</button>
+                </form>
+            </div>
+
+            <!-- Footer -->
+            <div class="card-footer">
+                <span>SYS: LINUX x86_64</span>
+                <span class="footer-id" id="session-id">SESSION: GEN...</span>
+                <span>TLS 1.3</span>
+            </div>
+        </div>
+
+        <p class="warn-text">⚠ UNAUTHORIZED ACCESS IS A FEDERAL OFFENSE — ALL ACTIVITY IS LOGGED</p>
+    </div>
+
+    <script>
+        // ─── Matrix Rain ────────────────────────────────────────────────
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        const chars = 'アイウエオカキクケコサシスセソ0123456789ABCDEF<>{}[]/\\|;:!@#$%^&*';
+        let cols, drops;
+
+        function initMatrix() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const fontSize = 13;
+            cols = Math.floor(canvas.width / fontSize);
+            drops = Array(cols).fill(1);
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(10, 22, 40, 0.06)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = '13px Share Tech Mono, monospace';
+            for (let i = 0; i < drops.length; i++) {
+                const char = chars[Math.floor(Math.random() * chars.length)];
+                const brightness = Math.random();
+                if (brightness > 0.97) {
+                    ctx.fillStyle = '#ffffff';
+                } else if (brightness > 0.92) {
+                    ctx.fillStyle = '#00d4ff';
+                } else if (brightness > 0.85) {
+                    ctx.fillStyle = '#00ff88';
+                } else {
+                    ctx.fillStyle = '#1e3a5f';
+                }
+                ctx.fillText(char, i * 13, drops[i] * 13);
+                if (drops[i] * 13 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+
+        initMatrix();
+        setInterval(drawMatrix, 45);
+        window.addEventListener('resize', initMatrix);
+
+        // ─── Clock ───────────────────────────────────────────────────────
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ─── Session ID ──────────────────────────────────────────────────
+        const hex = () => Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+        document.getElementById('session-id').textContent = `SESSION: ${hex()}-${hex()}`;
+    </script>
+</body>
+
+</html>

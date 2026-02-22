@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rex | Settings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --green: #00ff88;
+            --green-dim: #39ff8f;
+            --cyan: #00d4ff;
+            --cyan-dim: #0dcaf0;
+            --yellow: #aaff00;
+            --red: #ff4444;
+            --bg: #0a1628;
+            --bg2: #0f1f35;
+            --bg3: #1a2d4a;
+            --card: rgba(15, 31, 53, 0.95);
+            --text-primary: #ffffff;
+            --text-secondary: #8899aa;
+            --text-body: #c5d0db;
+            --border: #1e3a5f;
+            --border-glow: rgba(0, 212, 255, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text-body);
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        /* ── SIDEBAR ────────────────────────────────────────── */
+        .sidebar {
+            width: 240px;
+            min-height: 100vh;
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 1.2rem;
+            gap: 2rem;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .sidebar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 1px;
+            background: linear-gradient(180deg, transparent, var(--cyan), var(--green), transparent);
+            opacity: 0.35;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo-area img {
+            width: 44px;
+            height: 44px;
+            filter: drop-shadow(0 0 6px var(--green)) drop-shadow(0 0 16px rgba(0, 212, 255, 0.25));
+        }
+
+        .logo-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: var(--green);
+            text-shadow: 0 0 8px var(--green);
+            letter-spacing: 3px;
+        }
+
+        .logo-tagline {
+            font-size: 0.55rem;
+            color: var(--cyan-dim);
+            letter-spacing: 2px;
+        }
+
+        .nav-section-label {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            letter-spacing: 3px;
+            padding: 0 0.5rem;
+            margin-bottom: 0.4rem;
+        }
+
+        nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .nav-item {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.6rem 0.75rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .nav-item .nav-icon {
+            font-size: 0.9rem;
+        }
+
+        .nav-item.active,
+        .nav-item:hover {
+            background: rgba(0, 212, 255, 0.07);
+            border-color: var(--border-glow);
+            color: var(--cyan);
+            text-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+        }
+
+        .nav-item.danger {
+            color: rgba(255, 80, 80, 0.7);
+        }
+
+        .nav-item.danger:hover {
+            background: rgba(255, 60, 60, 0.07);
+            border-color: rgba(255, 80, 80, 0.3);
+            color: var(--red);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .sidebar-status {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+        }
+
+        .dot-green {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 5px var(--green);
+            margin-right: 5px;
+        }
+
+        /* ── MAIN ────────────────────────────────────────────── */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.6rem 2rem;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.8rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .topbar-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            color: var(--cyan);
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .topbar-title::before {
+            content: '> ';
+            color: var(--green);
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        /* ── CARD ────────────────────────────────────────────── */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.04);
+        }
+
+        .card-header {
+            background: rgba(0, 212, 255, 0.05);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .card-header-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            color: var(--cyan);
+            letter-spacing: 3px;
+            text-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+        }
+
+        .card-body {
+            padding: 1.2rem;
+        }
+
+        /* ── FORM ────────────────────────────────────────────── */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.35rem;
+            color: var(--cyan-dim);
+            font-size: 0.68rem;
+            letter-spacing: 2px;
+        }
+
+        label::before {
+            content: '// ';
+            color: rgba(0, 212, 255, 0.35);
+        }
+
+        label.hint {
+            color: var(--text-secondary);
+            font-size: 0.6rem;
+            letter-spacing: 0;
+            margin-top: 0.3rem;
+        }
+
+        label.hint::before {
+            content: 'ℹ ';
+            color: rgba(0, 212, 255, 0.4);
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="url"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            background: rgba(26, 45, 74, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            color: var(--text-primary);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.82rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--cyan);
+            background: rgba(0, 212, 255, 0.05);
+            box-shadow: 0 0 0 1px var(--cyan), 0 0 12px rgba(0, 212, 255, 0.15);
+        }
+
+        select option {
+            background: var(--bg2);
+            color: var(--text-primary);
+        }
+
+        /* Toggle switch */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(30, 58, 95, 0.4);
+        }
+
+        .toggle-row:last-child {
+            border-bottom: none;
+        }
+
+        .toggle-label {
+            font-size: 0.78rem;
+            color: var(--text-body);
+        }
+
+        .toggle-desc {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            letter-spacing: 0.5px;
+        }
+
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            transition: 0.25s;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            left: 3px;
+            bottom: 3px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            transition: 0.25s;
+        }
+
+        .toggle input:checked+.toggle-slider {
+            background: rgba(0, 212, 255, 0.15);
+            border-color: var(--cyan);
+        }
+
+        .toggle input:checked+.toggle-slider::before {
+            transform: translateX(22px);
+            background: var(--cyan);
+            box-shadow: 0 0 6px var(--cyan);
+        }
+
+        /* Buttons */
+        .btn-save {
+            width: 100%;
+            padding: 0.7rem;
+            background: rgba(0, 212, 255, 0.07);
+            border: 1px solid var(--cyan);
+            border-radius: 2px;
+            color: var(--cyan);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.72rem;
+            letter-spacing: 4px;
+            cursor: pointer;
+            margin-top: 0.75rem;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+            text-shadow: 0 0 8px var(--cyan);
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.12);
+        }
+
+        .btn-save::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.18), transparent);
+            transition: left 0.4s;
+        }
+
+        .btn-save:hover::before {
+            left: 100%;
+        }
+
+        .btn-save:hover {
+            background: rgba(0, 212, 255, 0.15);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.35);
+            color: #fff;
+        }
+
+        .btn-danger {
+            width: 100%;
+            padding: 0.7rem;
+            background: rgba(255, 60, 60, 0.06);
+            border: 1px solid rgba(255, 60, 60, 0.4);
+            border-radius: 2px;
+            color: var(--red);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.72rem;
+            letter-spacing: 4px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: all 0.25s;
+            text-shadow: 0 0 8px rgba(255, 60, 60, 0.4);
+        }
+
+        .btn-danger:hover {
+            background: rgba(255, 60, 60, 0.12);
+            box-shadow: 0 0 20px rgba(255, 60, 60, 0.25);
+            color: #fff;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--green);
+            border-radius: 3px;
+            padding: 0.7rem 1.2rem;
+            color: var(--green);
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .divider {
+            border: none;
+            height: 1px;
+            margin: 0.75rem 0;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.45rem 0;
+            border-bottom: 1px solid rgba(30, 58, 95, 0.4);
+            font-size: 0.75rem;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-key {
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
+        .info-val {
+            color: var(--text-primary);
+        }
+
+        .info-val.green {
+            color: var(--green);
+            text-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
+        }
+
+        .info-val.cyan {
+            color: var(--cyan);
+            text-shadow: 0 0 5px rgba(0, 212, 255, 0.3);
+        }
+
+        @media (max-width: 900px) {
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                flex-direction: column;
+                overflow: auto;
+            }
+
+            .sidebar {
+                width: 100%;
+                min-height: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo-area">
+            <img src="{{ url_for('static', filename='rex_logo.svg') }}" alt="Rex">
+            <div>
+                <div class="logo-name">REX</div>
+                <div class="logo-tagline">PHISH SUITE v2</div>
+            </div>
+        </div>
+        <div>
+            <div class="nav-section-label">NAVIGATION</div>
+            <nav>
+                <a href="/" class="nav-item"><span class="nav-icon">⬡</span> Dashboard</a>
+                <a href="/analytics" class="nav-item"><span class="nav-icon">◈</span> Analytics</a>
+                <a href="/settings" class="nav-item active"><span class="nav-icon">◇</span> Settings</a>
+            </nav>
+        </div>
+        <div class="sidebar-footer">
+            <a href="/admin/logout" class="nav-item danger" style="text-decoration:none;">
+                <span class="nav-icon">⏏</span> Logout
+            </a>
+            <div class="sidebar-status" style="margin-top:1rem; padding:0 0.5rem;">
+                <span class="dot-green"></span>SYSTEM ONLINE
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main-content">
+        <div class="topbar">
+            <span class="topbar-title">SETTINGS</span>
+            <span style="font-size:0.65rem; color:var(--text-secondary); letter-spacing:1px;"
+                id="s-clock">--:--:--</span>
+        </div>
+
+        <div class="settings-grid">
+            <!-- Admin Credentials -->
+            <div class="card">
+                <div class="card-header">
+                    <span style="font-size:0.9rem;">🔐</span>
+                    <span class="card-header-title">ADMIN CREDENTIALS</span>
+                </div>
+                <div class="card-body">
+                    <form action="/settings/credentials" method="POST">
+                        <div class="form-group">
+                            <label>USERNAME</label>
+                            <input type="text" name="new_username" placeholder="{{ current_username }}">
+                        </div>
+                        <div class="form-group">
+                            <label>NEW PASSWORD</label>
+                            <input type="password" name="new_password" placeholder="••••••••••••">
+                        </div>
+                        <div class="form-group">
+                            <label>CONFIRM PASSWORD</label>
+                            <input type="password" name="confirm_password" placeholder="••••••••••••">
+                        </div>
+                        <div class="form-group">
+                            <label>CURRENT PASSWORD (required)</label>
+                            <input type="password" name="current_password" required placeholder="••••••••••••">
+                            <label class="hint">Required to authorize credential changes</label>
+                        </div>
+                        {% if cred_error %}
+                        <div style="color:var(--red); font-size:0.72rem; margin-bottom:0.75rem; letter-spacing:0.5px;">
+                            ⚠ {{ cred_error }}
+                        </div>
+                        {% endif %}
+                        {% if cred_ok %}
+                        <div
+                            style="color:var(--green); font-size:0.72rem; margin-bottom:0.75rem; letter-spacing:0.5px;">
+                            ✓ {{ cred_ok }}
+                        </div>
+                        {% endif %}
+                        <button type="submit" class="btn-save">[ SAVE CREDENTIALS ]</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Preferences (localStorage) -->
+            <div>
+                <div class="card" style="margin-bottom:1.5rem;">
+                    <div class="card-header">
+                        <span style="font-size:0.9rem;">⚙</span>
+                        <span class="card-header-title">INTERFACE PREFERENCES</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="toggle-row">
+                            <div>
+                                <div class="toggle-label">Auto-Reload on Campaign Page</div>
+                                <div class="toggle-desc">Refresh every 5s to track live events</div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="pref-autoreload" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-row">
+                            <div>
+                                <div class="toggle-label">Confirm Before Delete</div>
+                                <div class="toggle-desc">Show dialog before deleting campaigns</div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="pref-confirm-delete" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-row">
+                            <div>
+                                <div class="toggle-label">Show Tracking IDs</div>
+                                <div class="toggle-desc">Display UUID tracking IDs in tables</div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="pref-show-ids" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <hr class="divider">
+                        <div class="form-group" style="margin-bottom:0.5rem;">
+                            <label>DEFAULT REDIRECT URL</label>
+                            <input type="url" id="pref-redirect" placeholder="https://microsoft.com/en-us/">
+                            <label class="hint">Pre-filled in new campaigns</label>
+                        </div>
+                        <button type="button" class="btn-save" onclick="savePrefs()">[ SAVE PREFERENCES ]</button>
+                    </div>
+                </div>
+
+                <!-- System info -->
+                <div class="card">
+                    <div class="card-header">
+                        <span style="font-size:0.9rem;">🖥</span>
+                        <span class="card-header-title">SYSTEM INFO</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <span class="info-key">VERSION</span>
+                            <span class="info-val cyan">REX v2.0</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">DATABASE</span>
+                            <span class="info-val green">ONLINE ●</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">TOTAL CAMPAIGNS</span>
+                            <span class="info-val">{{ sys_info.campaigns }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">TOTAL TARGETS</span>
+                            <span class="info-val">{{ sys_info.targets }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">TOTAL EVENTS</span>
+                            <span class="info-val">{{ sys_info.events }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">FORM CAPTURES</span>
+                            <span class="info-val">{{ sys_info.captures }}</span>
+                        </div>
+                        <hr class="divider">
+                        <form action="/settings/clear_data" method="POST"
+                            onsubmit="return confirm('⚠ This will permanently delete ALL campaigns, targets, and events. Are you sure?');">
+                            <button type="submit" class="btn-danger">[ PURGE ALL DATA ]</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">✓ PREFERENCES SAVED</div>
+
+    <script>
+        // Clock
+        function updateClock() {
+            const n = new Date();
+            const pad = v => String(v).padStart(2, '0');
+            document.getElementById('s-clock').textContent =
+                `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        // Load prefs
+        const prefKeys = ['pref-autoreload', 'pref-confirm-delete', 'pref-show-ids'];
+        prefKeys.forEach(k => {
+            const el = document.getElementById(k);
+            const saved = localStorage.getItem('rex_' + k);
+            if (el && saved !== null) el.checked = saved === '1';
+        });
+        const redirectEl = document.getElementById('pref-redirect');
+        const savedRedirect = localStorage.getItem('rex_redirect_url');
+        if (redirectEl && savedRedirect) redirectEl.value = savedRedirect;
+
+        function savePrefs() {
+            prefKeys.forEach(k => {
+                const el = document.getElementById(k);
+                if (el) localStorage.setItem('rex_' + k, el.checked ? '1' : '0');
+            });
+            if (redirectEl) localStorage.setItem('rex_redirect_url', redirectEl.value.trim());
+
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+    </script>
+</body>
+
+</html>

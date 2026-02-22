@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rex | Campaign Intel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --green: #00ff88;
+            --green-dim: #39ff8f;
+            --cyan: #00d4ff;
+            --cyan-dim: #0dcaf0;
+            --yellow: #aaff00;
+            --red: #ff4444;
+            --bg: #0a1628;
+            --bg2: #0f1f35;
+            --bg3: #1a2d4a;
+            --card: rgba(15, 31, 53, 0.95);
+            --text-primary: #ffffff;
+            --text-secondary: #8899aa;
+            --text-body: #c5d0db;
+            --border: #1e3a5f;
+            --border-glow: rgba(0, 212, 255, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text-body);
+            min-height: 100vh;
+            padding: 1.5rem 2rem 3rem;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        /* ── TOP NAV BAR ─────────────────────────────────────── */
+        .topnav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.2rem;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            margin-bottom: 1.6rem;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .back-link:hover {
+            color: var(--cyan);
+            text-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-logo img {
+            height: 30px;
+            filter: drop-shadow(0 0 5px var(--green));
+        }
+
+        .nav-logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            color: var(--green);
+            text-shadow: 0 0 8px var(--green);
+            letter-spacing: 3px;
+        }
+
+        .topnav-clock {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+        }
+
+        /* ── HEADER ──────────────────────────────────────────── */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .campaign-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--cyan);
+            text-shadow: 0 0 12px rgba(0, 212, 255, 0.5);
+            letter-spacing: 3px;
+            margin-bottom: 0.3rem;
+        }
+
+        .campaign-subtitle {
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+        }
+
+        .campaign-subtitle::before {
+            content: '> LAUNCHED: ';
+            color: var(--green);
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.5rem 1.1rem;
+            border-radius: 2px;
+            text-decoration: none;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.22s;
+            border: 1px solid;
+        }
+
+        .btn-cyan {
+            background: rgba(0, 212, 255, 0.07);
+            border-color: var(--cyan);
+            color: var(--cyan);
+            text-shadow: 0 0 6px rgba(0, 212, 255, 0.5);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.1);
+        }
+
+        .btn-cyan:hover {
+            background: rgba(0, 212, 255, 0.15);
+            box-shadow: 0 0 18px rgba(0, 212, 255, 0.3);
+            color: #fff;
+        }
+
+        .btn-green {
+            background: rgba(0, 255, 136, 0.07);
+            border-color: var(--green);
+            color: var(--green);
+            text-shadow: 0 0 6px rgba(0, 255, 136, 0.5);
+        }
+
+        .btn-green:hover {
+            background: rgba(0, 255, 136, 0.15);
+            box-shadow: 0 0 18px rgba(0, 255, 136, 0.3);
+            color: #fff;
+        }
+
+        /* ── PROGRESS BAR ────────────────────────────────────── */
+        #progress-container {
+            display: none;
+            margin-bottom: 1.4rem;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1rem 1.2rem;
+        }
+
+        .progress-top {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.6rem;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+        }
+
+        .progress-top span:first-child {
+            color: var(--cyan);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 6px;
+            background: var(--bg3);
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--green), var(--cyan));
+            border-radius: 3px;
+            transition: width 0.35s ease;
+            box-shadow: 0 0 8px var(--cyan);
+        }
+
+        /* ── TABLE CARD ──────────────────────────────────────── */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.05);
+        }
+
+        .card-header {
+            background: rgba(0, 212, 255, 0.05);
+            border-bottom: 1px solid var(--border);
+            padding: 0.8rem 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .card-header-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.68rem;
+            color: var(--cyan);
+            letter-spacing: 3px;
+            text-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 640px;
+        }
+
+        th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            background: rgba(0, 0, 0, 0.25);
+            font-weight: 400;
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        th:first-child {
+            color: var(--cyan-dim);
+        }
+
+        td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid rgba(30, 58, 95, 0.5);
+            font-size: 0.8rem;
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(0, 212, 255, 0.025);
+        }
+
+        .target-email {
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            letter-spacing: 0.3px;
+        }
+
+        .tracking-id {
+            font-size: 0.62rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        /* ── BADGES ──────────────────────────────────────────── */
+        .badge {
+            display: inline-block;
+            padding: 0.18rem 0.6rem;
+            border-radius: 2px;
+            font-size: 0.65rem;
+            font-weight: 400;
+            letter-spacing: 1.5px;
+            border: 1px solid;
+        }
+
+        .badge-sent {
+            background: rgba(0, 255, 136, 0.08);
+            border-color: rgba(0, 255, 136, 0.4);
+            color: var(--green);
+            text-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
+        }
+
+        .badge-pending {
+            background: rgba(170, 255, 0, 0.06);
+            border-color: rgba(170, 255, 0, 0.35);
+            color: var(--yellow);
+        }
+
+        .badge-failed,
+        .badge-error {
+            background: rgba(255, 60, 60, 0.07);
+            border-color: rgba(255, 60, 60, 0.35);
+            color: #ff7777;
+        }
+
+        .badge-yes-warn {
+            background: rgba(170, 255, 0, 0.06);
+            border-color: rgba(170, 255, 0, 0.35);
+            color: var(--yellow);
+        }
+
+        .badge-yes-green {
+            background: rgba(0, 255, 136, 0.08);
+            border-color: rgba(0, 255, 136, 0.4);
+            color: var(--green);
+            text-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
+        }
+
+        .badge-no {
+            background: rgba(136, 153, 170, 0.07);
+            border-color: rgba(136, 153, 170, 0.2);
+            color: var(--text-secondary);
+        }
+
+        /* ── DETAILS / PRE ───────────────────────────────────── */
+        details {
+            cursor: pointer;
+        }
+
+        summary {
+            color: var(--cyan);
+            font-size: 0.72rem;
+            letter-spacing: 1px;
+            user-select: none;
+            transition: color 0.2s;
+        }
+
+        summary:hover {
+            color: var(--green);
+        }
+
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            padding: 0.75rem;
+            border-radius: 2px;
+            margin-top: 0.5rem;
+            white-space: pre-wrap;
+            font-size: 0.72rem;
+            color: var(--green-dim);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .dash-placeholder {
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Nav -->
+    <div class="topnav">
+        <div class="nav-left">
+            <div class="nav-logo">
+                <img src="{{ url_for('static', filename='rex_logo.svg') }}" alt="Rex">
+                <span class="nav-logo-text">REX</span>
+            </div>
+            <a href="/" class="back-link">← DASHBOARD</a>
+        </div>
+        <span class="topnav-clock" id="page-clock">--:--:--</span>
+    </div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <div class="campaign-title">{{ campaign.name }}</div>
+            <div class="campaign-subtitle">{{ campaign.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</div>
+        </div>
+        <div class="actions">
+            <button id="start-sending-btn" class="btn btn-green" onclick="startSending()" style="display:none;">
+                🚀 START SENDING
+            </button>
+            <a href="{{ url_for('export_campaign', campaign_id=campaign.id) }}" class="btn btn-cyan">
+                ⬇ EXPORT CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div id="progress-container">
+        <div class="progress-top">
+            <span>TRANSMISSION PROGRESS</span>
+            <span id="progress-text">0 / 0</span>
+        </div>
+        <div class="progress-track">
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+
+    <!-- Target Table -->
+    <div class="card">
+        <div class="card-header">
+            <span style="font-size:0.9rem;">📋</span>
+            <span class="card-header-title">TARGET INTELLIGENCE — {{ campaign.targets|length }} RECORDS</span>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Target</th>
+                        <th>Status</th>
+                        <th>Email Open</th>
+                        <th>Link Click</th>
+                        <th>Credential Submit</th>
+                        <th>Captured Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for target in campaign.targets %}
+                    <tr>
+                        <td>
+                            <div class="target-email">{{ target.email }}</div>
+                            <div class="tracking-id">ID: {{ target.tracking_id[:8] }}...</div>
+                        </td>
+                        <td>
+                            <span id="status-{{ target.id }}" class="badge
+                                {% if target.status|lower == 'sent' %}badge-sent
+                                {% elif target.status|lower == 'pending' %}badge-pending
+                                {% else %}badge-failed{% endif %}" data-target-id="{{ target.id }}"
+                                data-status="{{ target.status }}">
+                                {{ target.status|upper }}
+                            </span>
+                        </td>
+                        <td>
+                            {% set opens = target.events|selectattr('type', 'equalto', 'open')|list %}
+                            {% if opens %}
+                            <span class="badge badge-yes-warn">YES ×{{ opens|length }}</span>
+                            {% else %}
+                            <span class="badge badge-no">NO</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set clicks = target.events|selectattr('type', 'equalto', 'click')|list %}
+                            {% if clicks %}
+                            <span class="badge badge-yes-warn">YES ×{{ clicks|length }}</span>
+                            {% else %}
+                            <span class="badge badge-no">NO</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set submits = target.events|selectattr('type', 'equalto', 'submit')|list %}
+                            {% if submits %}
+                            <span class="badge badge-yes-green">CAPTURED ✓</span>
+                            {% else %}
+                            <span class="badge badge-no">NO</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if target.form_data %}
+                            <details>
+                                <summary>[ VIEW DATA ]</summary>
+                                <pre>{{ target.form_data[0].data | tojson(indent=2) }}</pre>
+                            </details>
+                            {% else %}
+                            <span class="dash-placeholder">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Clock
+        function updateClock() {
+            const n = new Date();
+            const pad = v => String(v).padStart(2, '0');
+            document.getElementById('page-clock').textContent =
+                `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        // Check pending on load
+        document.addEventListener('DOMContentLoaded', function () {
+            const pendingTargets = document.querySelectorAll('[data-status="Pending"]');
+            if (pendingTargets.length > 0) {
+                document.getElementById('start-sending-btn').style.display = 'inline-flex';
+            } else {
+                startAutoReload();
+            }
+        });
+
+        let isSending = false;
+
+        function startAutoReload() {
+            if (!isSending) {
+                setTimeout(function () { if (!isSending) location.reload(); }, 5000);
+            }
+        }
+
+        async function startSending() {
+            isSending = true;
+            const btn = document.getElementById('start-sending-btn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ SENDING...';
+
+            const pendingTargets = Array.from(document.querySelectorAll('[data-status="Pending"]'));
+            const total = pendingTargets.length;
+            let completed = 0;
+
+            document.getElementById('progress-container').style.display = 'block';
+            updateProgress(0, total);
+
+            for (const targetSpan of pendingTargets) {
+                const targetId = targetSpan.dataset.targetId;
+                targetSpan.className = 'badge badge-pending';
+                targetSpan.innerText = 'TX...';
+
+                try {
+                    const response = await fetch(`/api/send_target/${targetId}`, { method: 'POST' });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        targetSpan.className = 'badge badge-sent';
+                        targetSpan.innerText = 'SENT';
+                        targetSpan.dataset.status = 'Sent';
+                    } else {
+                        targetSpan.className = 'badge badge-failed';
+                        targetSpan.innerText = 'FAILED';
+                        targetSpan.dataset.status = 'Failed';
+                    }
+                } catch (error) {
+                    targetSpan.className = 'badge badge-error';
+                    targetSpan.innerText = 'ERROR';
+                    targetSpan.dataset.status = 'Error';
+                }
+
+                completed++;
+                updateProgress(completed, total);
+            }
+
+            btn.innerHTML = '✓ DONE';
+            isSending = false;
+            setTimeout(() => location.reload(), 2000);
+        }
+
+        function updateProgress(completed, total) {
+            const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+            document.getElementById('progress-bar').style.width = pct + '%';
+            document.getElementById('progress-text').textContent = `${completed} / ${total}`;
+        }
+    </script>
+</body>
+
+</html>

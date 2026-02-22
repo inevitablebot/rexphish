@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="strongGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0d1f0d"/>
+      <stop offset="100%" stop-color="#000500"/>
+    </radialGradient>
+    <linearGradient id="skullGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00ff88"/>
+      <stop offset="100%" stop-color="#00aa55"/>
+    </linearGradient>
+    <linearGradient id="hoodGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a1a"/>
+      <stop offset="100%" stop-color="#050505"/>
+    </linearGradient>
+    <clipPath id="circleClip">
+      <circle cx="60" cy="60" r="58"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="60" cy="60" r="58" fill="url(#bgGrad)"/>
+  <circle cx="60" cy="60" r="58" fill="none" stroke="#00ff88" stroke-width="1.5" opacity="0.6" filter="url(#glow)"/>
+
+  <!-- Inner ring dashes -->
+  <circle cx="60" cy="60" r="52" fill="none" stroke="#00ff88" stroke-width="0.5" stroke-dasharray="3 5" opacity="0.3"/>
+
+  <!-- Circuit traces clipped to circle -->
+  <g clip-path="url(#circleClip)" opacity="0.25" stroke="#00ff88" stroke-width="0.8" fill="none">
+    <polyline points="2,60 18,60 22,50 30,50"/>
+    <polyline points="118,60 102,60 98,70 90,70"/>
+    <polyline points="60,2 60,18 70,22 70,30"/>
+    <polyline points="60,118 60,102 50,98 50,90"/>
+    <circle cx="18" cy="60" r="2" fill="#00ff88" stroke="none"/>
+    <circle cx="102" cy="60" r="2" fill="#00ff88" stroke="none"/>
+    <circle cx="60" cy="18" r="2" fill="#00ff88" stroke="none"/>
+    <circle cx="60" cy="102" r="2" fill="#00ff88" stroke="none"/>
+    <polyline points="15,30 25,30 25,22 35,22"/>
+    <polyline points="105,90 95,90 95,98 85,98"/>
+  </g>
+
+  <!-- Hood shape -->
+  <path d="M20,75 Q20,30 60,22 Q100,30 100,75 L100,88 Q60,95 20,88 Z" fill="url(#hoodGrad)" opacity="0.92"/>
+  <!-- Hood shadow overlay -->
+  <path d="M28,72 Q28,38 60,30 Q92,38 92,72 L92,84 Q60,90 28,84 Z" fill="#080808" opacity="0.7"/>
+
+  <!-- Skull cranium -->
+  <ellipse cx="60" cy="58" rx="22" ry="20" fill="url(#skullGrad)" filter="url(#glow)"/>
+
+  <!-- Skull jaw -->
+  <rect x="48" y="73" width="24" height="11" rx="4" fill="url(#skullGrad)" filter="url(#glow)"/>
+
+  <!-- Jaw teeth lines -->
+  <line x1="54" y1="73" x2="54" y2="84" stroke="#000" stroke-width="1.5"/>
+  <line x1="60" y1="73" x2="60" y2="84" stroke="#000" stroke-width="1.5"/>
+  <line x1="66" y1="73" x2="66" y2="84" stroke="#000" stroke-width="1.5"/>
+
+  <!-- Eye sockets -->
+  <ellipse cx="52" cy="57" rx="6" ry="6.5" fill="#000500"/>
+  <ellipse cx="68" cy="57" rx="6" ry="6.5" fill="#000500"/>
+
+  <!-- Eye glow pupils -->
+  <ellipse cx="52" cy="57" rx="3" ry="3.5" fill="#00ff88" opacity="0.9" filter="url(#strongGlow)"/>
+  <ellipse cx="68" cy="57" rx="3" ry="3.5" fill="#00ff88" opacity="0.9" filter="url(#strongGlow)"/>
+
+  <!-- Nose cavity -->
+  <path d="M57,66 Q60,63 63,66 L62,70 Q60,71 58,70 Z" fill="#000500"/>
+
+  <!-- Hood rim highlight -->
+  <path d="M21,76 Q20,50 60,23 Q100,50 99,76" fill="none" stroke="#00ff88" stroke-width="1" opacity="0.4" filter="url(#glow)"/>
+
+  <!-- Bottom text bar -->
+  <rect x="10" y="97" width="100" height="14" rx="3" fill="#000" opacity="0.5"/>
+  <text x="60" y="108" text-anchor="middle" font-family="'Courier New', monospace" font-size="8" font-weight="bold" fill="#00ff88" filter="url(#glow)" letter-spacing="3">REX</text>
+
+  <!-- Corner brackets decoration -->
+  <g stroke="#00ff88" stroke-width="1.2" fill="none" opacity="0.7" filter="url(#glow)">
+    <polyline points="6,14 6,6 14,6"/>
+    <polyline points="114,6 106,6"/>
+    <polyline points="114,6 114,14"/>
+    <polyline points="6,106 6,114 14,114"/>
+    <polyline points="114,106 114,114 106,114"/>
+  </g>
+</svg>
