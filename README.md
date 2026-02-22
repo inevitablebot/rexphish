@@ -58,6 +58,63 @@ The UI follows a hacker/cyberpunk terminal aesthetic with a navy + neon palette.
 
 ---
 
+## Quick Start (short)
+
+1. Clone the repository and change directory:
+
+```bash
+git clone https://github.com/inevitablebot/rexphish.git
+cd rexphish
+```
+
+2. Create and activate a Python virtual environment:
+
+```powershell
+python -m venv venv
+venv\Scripts\activate
+```
+
+3. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+4. Create a minimal `.env` file (see `Run scripts & .env` below for details) and start the app:
+
+```powershell
+# Windows one-click
+.\run.bat
+
+# Or manual
+venv\Scripts\activate
+python app.py
+```
+
+---
+
+## Run scripts & .env (examples)
+
+- `run.bat`: Windows helper that creates/activates the venv, installs dependencies, and launches the dev server. Use this for quick local runs.
+- `start_tunnel.bat`: Starts a Cloudflare quick tunnel (if you placed `cloudflared.exe` in the repo).
+
+Minimal `.env` example (DO NOT commit your real secrets):
+
+```env
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin
+SECRET_KEY=replace-with-strong-secret
+DATABASE_URL=sqlite:///site.db
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+PUBLIC_URL=
+```
+
+Tips:
+- Use a strong `SECRET_KEY` (generate with Python: `python -c "import secrets; print(secrets.token_hex(32))"`).
+- For sending email via Gmail, create an App Password and put it in the campaign form (not in `.env`).
+---
+
 ## Features
 
 | Feature | Description |
