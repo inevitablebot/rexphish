@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rex | Templates</title>
+    <title>Rex | Sending Profiles</title>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap"
         rel="stylesheet">
     <style>
@@ -273,7 +273,8 @@
         }
 
         input[type="text"],
-        textarea {
+        input[type="email"],
+        input[type="password"] {
             width: 100%;
             padding: 0.6rem 0.85rem;
             background: rgba(26, 45, 74, 0.6);
@@ -286,19 +287,7 @@
             transition: all 0.2s;
         }
 
-        textarea {
-            resize: vertical;
-            min-height: 110px;
-            line-height: 1.5;
-        }
-
-        input::placeholder,
-        textarea::placeholder {
-            color: var(--text-secondary);
-        }
-
-        input:focus,
-        textarea:focus {
+        input:focus {
             border-color: var(--cyan);
             background: rgba(0, 212, 255, 0.05);
             box-shadow: 0 0 0 1px var(--cyan), 0 0 12px rgba(0, 212, 255, 0.15);
@@ -323,58 +312,40 @@
             overflow: hidden;
         }
 
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.18), transparent);
-            transition: left 0.4s;
-        }
-
-        .btn-primary:hover::before {
-            left: 100%;
-        }
-
         .btn-primary:hover {
             background: rgba(0, 212, 255, 0.15);
             box-shadow: 0 0 20px rgba(0, 212, 255, 0.35);
             color: #fff;
         }
 
-        /* TEMPLATE LIST */
-        .tpl-list {
+        /* PROFILE LIST */
+        .prof-list {
             display: flex;
             flex-direction: column;
             gap: 1rem;
         }
 
-        .tpl-card {
+        .prof-card {
             background: var(--bg3);
             border: 1px solid var(--border);
             border-radius: 3px;
-            overflow: hidden;
-            transition: border-color 0.2s;
-        }
-
-        .tpl-card:hover {
-            border-color: rgba(0, 212, 255, 0.3);
-        }
-
-        .tpl-header {
+            padding: 0.8rem 1rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0.7rem 1rem;
-            background: rgba(0, 212, 255, 0.04);
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-            user-select: none;
+            transition: border-color 0.2s;
         }
 
-        .tpl-name {
+        .prof-card:hover {
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+
+        .prof-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .prof-name {
             font-family: 'Orbitron', sans-serif;
             font-size: 0.7rem;
             color: var(--green);
@@ -382,29 +353,27 @@
             text-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
         }
 
-        .tpl-subject {
+        .prof-email {
             font-size: 0.68rem;
             color: var(--text-secondary);
             margin-top: 2px;
         }
 
-        .tpl-actions {
-            display: flex;
-            gap: 0.4rem;
-            flex-shrink: 0;
-        }
-
-        .btn-edit {
+        .btn-edit,
+        .btn-del {
             background: none;
             border: 1px solid var(--border);
             border-radius: 2px;
-            color: var(--cyan);
             font-family: 'Share Tech Mono', monospace;
             font-size: 0.65rem;
             padding: 0.3rem 0.6rem;
             cursor: pointer;
             letter-spacing: 1px;
             transition: all 0.2s;
+        }
+
+        .btn-edit {
+            color: var(--cyan);
         }
 
         .btn-edit:hover {
@@ -413,47 +382,16 @@
         }
 
         .btn-del {
-            background: none;
-            border: 1px solid rgba(255, 60, 60, 0.3);
-            border-radius: 2px;
+            border-color: rgba(255, 60, 60, 0.3);
             color: var(--red);
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.65rem;
-            padding: 0.3rem 0.6rem;
-            cursor: pointer;
-            letter-spacing: 1px;
-            transition: all 0.2s;
         }
 
         .btn-del:hover {
             border-color: var(--red);
-            background: rgba(255, 60, 60, 0.07);
+            background: rgba(255, 60, 60, 0.1);
         }
 
-        .tpl-body-preview {
-            padding: 0.7rem 1rem;
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            line-height: 1.5;
-            display: none;
-            border-top: 1px solid var(--border);
-            white-space: pre-wrap;
-            word-break: break-word;
-            max-height: 180px;
-            overflow-y: auto;
-        }
-
-        .tpl-card.open .tpl-body-preview {
-            display: block;
-        }
-
-        .tpl-toggle {
-            font-size: 0.65rem;
-            color: var(--text-secondary);
-            letter-spacing: 1px;
-        }
-
-        /* Edit modal */
+        /* Modal */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -474,9 +412,7 @@
             border: 1px solid var(--border);
             border-radius: 4px;
             padding: 1.5rem;
-            width: min(540px, 95vw);
-            max-height: 90vh;
-            overflow-y: auto;
+            width: min(440px, 95vw);
             box-shadow: 0 0 40px rgba(0, 212, 255, 0.12);
         }
 
@@ -490,11 +426,6 @@
             border-bottom: 1px solid var(--border);
         }
 
-        .modal-title::before {
-            content: '> ';
-            color: var(--green);
-        }
-
         .btn-cancel {
             width: 100%;
             padding: 0.6rem;
@@ -506,13 +437,7 @@
             font-size: 0.75rem;
             cursor: pointer;
             margin-top: 0.5rem;
-            letter-spacing: 1px;
             transition: all 0.2s;
-        }
-
-        .btn-cancel:hover {
-            background: rgba(255, 60, 60, 0.1);
-            border-color: var(--red);
         }
 
         .hint-box {
@@ -524,51 +449,6 @@
             font-size: 0.7rem;
             color: var(--text-secondary);
             line-height: 1.6;
-        }
-
-        .hint-box code {
-            color: var(--green);
-            background: rgba(0, 255, 136, 0.08);
-            padding: 1px 5px;
-            border-radius: 2px;
-        }
-
-        .empty-state {
-            text-align: center;
-            color: var(--text-secondary);
-            padding: 2.5rem;
-            font-size: 0.75rem;
-            letter-spacing: 1px;
-        }
-
-        .badge-count {
-            display: inline-block;
-            background: rgba(0, 255, 136, 0.1);
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            color: var(--green);
-            font-size: 0.6rem;
-            padding: 1px 7px;
-            border-radius: 2px;
-            letter-spacing: 1px;
-            margin-left: 0.6rem;
-        }
-
-        @media (max-width: 900px) {
-            .page-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 640px) {
-            body {
-                flex-direction: column;
-                overflow: auto;
-            }
-
-            .sidebar {
-                width: 100%;
-                min-height: auto;
-            }
         }
     </style>
 </head>
@@ -588,8 +468,8 @@
             <nav>
                 <a href="/" class="nav-item"><span class="nav-icon">⬡</span> Dashboard</a>
                 <a href="/analytics" class="nav-item"><span class="nav-icon">◈</span> Analytics</a>
-                <a href="/templates" class="nav-item active"><span class="nav-icon">▣</span> Templates</a>
-                <a href="/profiles" class="nav-item"><span class="nav-icon">✉</span> Sending Profiles</a>
+                <a href="/templates" class="nav-item"><span class="nav-icon">▣</span> Templates</a>
+                <a href="/profiles" class="nav-item active"><span class="nav-icon">✉</span> Sending Profiles</a>
                 <a href="/settings" class="nav-item"><span class="nav-icon">◇</span> Settings</a>
             </nav>
         </div>
@@ -606,91 +486,82 @@
     <!-- MAIN -->
     <div class="main-content">
         <div class="topbar">
-            <span class="topbar-title">TEMPLATE LIBRARY</span>
+            <span class="topbar-title">SENDING PROFILES</span>
             <span style="font-size:0.65rem; color:var(--text-secondary); letter-spacing:1px;"
-                id="t-clock">--:--:--</span>
+                id="p-clock">--:--:--</span>
         </div>
 
         <div class="page-grid">
-            <!-- LEFT: Template list -->
+            <!-- LEFT: Profile list -->
             <div>
                 <div class="card">
                     <div class="card-header">
-                        <span style="font-size:0.9rem;">📂</span>
-                        <span class="card-header-title">SAVED TEMPLATES</span>
-                        <span class="badge-count">{{ templates|length }}</span>
+                        <span style="font-size:0.9rem;">📫</span>
+                        <span class="card-header-title">SAVED PROFILES</span>
+                        <span
+                            style="background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); color:var(--green); font-size:0.6rem; padding:1px 7px; border-radius:2px; margin-left:0.6rem;">{{
+                            profiles|length }}</span>
                     </div>
                     <div class="card-body">
-                        {% if templates %}
-                        <div class="tpl-list" id="tplList">
-                            {% for tpl in templates %}
-                            <div class="tpl-card" id="tpl-{{ tpl.id }}" data-id="{{ tpl.id }}"
-                                data-name="{{ tpl.name | e }}" data-subject="{{ tpl.subject | e }}"
-                                data-body="{{ tpl.body | e }}">
-                                <div class="tpl-header tpl-toggle-btn">
-                                    <div>
-                                        <div class="tpl-name">{{ tpl.name }}</div>
-                                        <div class="tpl-subject">SUB: {{ tpl.subject }}</div>
-                                    </div>
-                                    <div style="display:flex; align-items:center; gap:0.6rem;">
-                                        <span class="tpl-toggle" id="toggle-{{ tpl.id }}">[ + ]</span>
-                                        <div class="tpl-actions">
-                                            <button class="btn-edit tpl-edit-btn" type="button">EDIT</button>
-                                            <form action="/templates/{{ tpl.id }}/delete" method="POST"
-                                                style="display:inline;"
-                                                onsubmit="return confirm('Delete this template?');">
-                                                <button type="submit" class="btn-del">DEL</button>
-                                            </form>
-                                        </div>
-                                    </div>
+                        {% if profiles %}
+                        <div class="prof-list">
+                            {% for prof in profiles %}
+                            <div class="prof-card" data-id="{{ prof.id }}" data-name="{{ prof.name|e }}"
+                                data-email="{{ prof.email|e }}" data-pass="{{ prof.password|e }}">
+                                <div class="prof-info">
+                                    <div class="prof-name">{{ prof.name }}</div>
+                                    <div class="prof-email">{{ prof.email }}</div>
                                 </div>
-                                <div class="tpl-body-preview">{{ tpl.body }}</div>
+                                <div style="display:flex; gap:0.5rem;">
+                                    <button class="btn-edit"
+                                        onclick="openEdit('{{ prof.id }}', '{{ prof.name|e }}', '{{ prof.email|e }}', '{{ prof.password|e }}')">EDIT</button>
+                                    <form action="/profiles/{{ prof.id }}/delete" method="POST"
+                                        onsubmit="return confirm('Delete this profile?');">
+                                        <button type="submit" class="btn-del">DEL</button>
+                                    </form>
+                                </div>
                             </div>
                             {% endfor %}
                         </div>
                         {% else %}
-                        <div class="empty-state">// No templates yet — create one →</div>
+                        <div style="text-align:center; color:var(--text-secondary); padding:2rem; font-size:0.75rem;">//
+                            No profiles yet — add one →</div>
                         {% endif %}
                     </div>
                 </div>
             </div>
 
-            <!-- RIGHT: New template form + help -->
+            <!-- RIGHT: New profile form -->
             <div>
-                <!-- Syntax hint -->
-                <div class="hint-box" style="margin-bottom:1rem;">
-                    <strong style="color:var(--cyan); letter-spacing:1px;">LINK TOKENS</strong><br>
-                    Use <code>{% raw %}{{link}}{% endraw %}</code> → default anchor text "Click here to verify"<br>
-                    Use <code>{% raw %}{{link:Verify Now}}{% endraw %}</code> → custom anchor text<br><br>
-                    <strong style="color:var(--cyan); letter-spacing:1px;">ANTI-SPAM TIPS</strong><br>
-                    • Vary subject line wording across templates<br>
-                    • Mix formal & casual tone between templates<br>
-                    • Change sender name display across templates<br>
-                    • Use different call-to-action phrases
+                <div class="hint-box">
+                    <strong style="color:var(--cyan); letter-spacing:1px;">ROTATION STRATEGY</strong><br>
+                    Add multiple accounts to bypass Gmail/Mimecast sending limits. The system will randomly pick an
+                    account for each email in a batch.
+                    <br><br>
+                    <strong style="color:var(--cyan); letter-spacing:1px;">GMAIL USERS</strong><br>
+                    You <u>must</u> use a 16-character **App Password**, not your regular password. Enable 2FA first.
                 </div>
 
                 <div class="card">
                     <div class="card-header">
                         <span style="font-size:0.9rem;">✚</span>
-                        <span class="card-header-title">NEW TEMPLATE</span>
+                        <span class="card-header-title">NEW PROFILE</span>
                     </div>
                     <div class="card-body">
-                        <form action="/templates/new" method="POST">
+                        <form action="/profiles/new" method="POST">
                             <div class="form-group">
-                                <label>TEMPLATE NAME</label>
-                                <input type="text" name="name" required placeholder="e.g. IT Security Alert v1">
+                                <label>PROFILE NAME</label>
+                                <input type="text" name="name" required placeholder="e.g. Gmail - Main Account">
                             </div>
                             <div class="form-group">
-                                <label>EMAIL SUBJECT</label>
-                                <input type="text" name="subject" required
-                                    placeholder="e.g. Action Required: Verify Your Account">
+                                <label>EMAIL ADDRESS</label>
+                                <input type="email" name="email" required placeholder="your.name@gmail.com">
                             </div>
                             <div class="form-group">
-                                <label>EMAIL BODY (HTML)</label>
-                                <textarea name="body" required
-                                    placeholder="Dear {employee},&#10;&#10;Your account requires immediate verification.&#10;&#10;&#123;&#123;link:Verify Here&#125;&#125;&#10;&#10;IT Security Team"></textarea>
+                                <label>APP PASSWORD</label>
+                                <input type="password" name="password" required placeholder="xxxx xxxx xxxx xxxx">
                             </div>
-                            <button type="submit" class="btn-primary">[ SAVE TEMPLATE ]</button>
+                            <button type="submit" class="btn-primary">[ SAVE PROFILE ]</button>
                         </form>
                     </div>
                 </div>
@@ -701,19 +572,19 @@
     <!-- Edit Modal -->
     <div class="modal-overlay" id="edit-modal">
         <div class="modal">
-            <div class="modal-title">EDIT TEMPLATE</div>
+            <div class="modal-title">EDIT PROFILE</div>
             <form id="edit-form" method="POST">
                 <div class="form-group">
-                    <label>TEMPLATE NAME</label>
+                    <label>PROFILE NAME</label>
                     <input type="text" name="name" id="edit-name" required>
                 </div>
                 <div class="form-group">
-                    <label>EMAIL SUBJECT</label>
-                    <input type="text" name="subject" id="edit-subject" required>
+                    <label>EMAIL ADDRESS</label>
+                    <input type="email" name="email" id="edit-email" required>
                 </div>
                 <div class="form-group">
-                    <label>EMAIL BODY (HTML)</label>
-                    <textarea name="body" id="edit-body" required style="min-height:160px;"></textarea>
+                    <label>APP PASSWORD</label>
+                    <input type="password" name="password" id="edit-pass" required>
                 </div>
                 <button type="submit" class="btn-primary">[ SAVE CHANGES ]</button>
                 <button type="button" class="btn-cancel" onclick="closeEdit()">[ CANCEL ]</button>
@@ -722,63 +593,25 @@
     </div>
 
     <script>
-        // Clock
         function updateClock() {
             const n = new Date(), pad = v => String(v).padStart(2, '0');
-            document.getElementById('t-clock').textContent =
-                `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+            document.getElementById('p-clock').textContent = `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
         }
         setInterval(updateClock, 1000); updateClock();
 
-        // ── Toggle body preview ───────────────────────────────────
-        function togglePreview(card) {
-            const id = card.dataset.id;
-            const togEl = document.getElementById('toggle-' + id);
-            card.classList.toggle('open');
-            togEl.textContent = card.classList.contains('open') ? '[ − ]' : '[ + ]';
-        }
-
-        // ── Edit modal ────────────────────────────────────────────
-        function openEdit(id, name, subject, body) {
-            document.getElementById('edit-form').action = '/templates/' + id + '/edit';
+        function openEdit(id, name, email, pass) {
+            document.getElementById('edit-form').action = '/profiles/' + id + '/edit';
             document.getElementById('edit-name').value = name;
-            document.getElementById('edit-subject').value = subject;
-            document.getElementById('edit-body').value = body;
+            document.getElementById('edit-email').value = email;
+            document.getElementById('edit-pass').value = pass;
             document.getElementById('edit-modal').classList.add('show');
         }
 
-        function closeEdit() {
-            document.getElementById('edit-modal').classList.remove('show');
+        function closeEdit() { document.getElementById('edit-modal').classList.remove('show'); }
+
+        window.onclick = function (e) {
+            if (e.target == document.getElementById('edit-modal')) closeEdit();
         }
-
-        // ── Event delegation on template list ─────────────────────
-        const tplList = document.getElementById('tplList');
-        if (tplList) {
-            tplList.addEventListener('click', function (e) {
-                const card = e.target.closest('.tpl-card');
-                if (!card) return;
-
-                // EDIT button
-                if (e.target.closest('.tpl-edit-btn')) {
-                    e.stopPropagation();
-                    openEdit(card.dataset.id, card.dataset.name, card.dataset.subject, card.dataset.body);
-                    return;
-                }
-
-                // DEL form buttons — let them submit naturally
-                if (e.target.closest('.btn-del') || e.target.closest('form')) return;
-
-                // Header click = toggle preview
-                if (e.target.closest('.tpl-toggle-btn')) {
-                    togglePreview(card);
-                }
-            });
-        }
-
-        // Close modal on backdrop click
-        document.getElementById('edit-modal').addEventListener('click', function (e) {
-            if (e.target === this) closeEdit();
-        });
     </script>
 </body>
 

@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, send_file, abort, session, Response, flash, jsonify
 from functools import wraps
 from config import Config
-from models import db, Campaign, Target, Event, FormData, EmailTemplate
+from models import db, Campaign, Target, Event, FormData, EmailTemplate, SendingProfile
 from email_service import send_campaign_email
 import uuid
 import io
@@ -57,7 +57,8 @@ def admin_logout():
 def dashboard():
     campaigns = Campaign.query.order_by(Campaign.created_at.desc()).all()
     templates = EmailTemplate.query.order_by(EmailTemplate.name).all()
-    return render_template('dashboard.html', campaigns=campaigns, templates=templates)
+    profiles  = SendingProfile.query.order_by(SendingProfile.name).all()
+    return render_template('dashboard.html', campaigns=campaigns, templates=templates, profiles=profiles)
 
 @app.route('/campaign/<int:campaign_id>')
 @admin_required
@@ -198,6 +199,7 @@ def send_emails():
     recipient_list  = request.form.get('recipients', '').splitlines()
     recipient_list  = [r.strip() for r in recipient_list if r.strip()]
     template_ids    = request.form.getlist('template_ids')  # list of str IDs
+    profile_ids     = request.form.getlist('profile_ids')   # list of str IDs
 
     if not sender_email or not sender_password or not recipient_list:
         flash('Missing sender credentials or recipient list.', 'error')
@@ -222,10 +224,17 @@ def send_emails():
 
     # Link selected templates to the campaign
     if template_ids:
-        linked = EmailTemplate.query.filter(EmailTemplate.id.in_(
+        linked_tpls = EmailTemplate.query.filter(EmailTemplate.id.in_(
             [int(i) for i in template_ids if str(i).isdigit()]
         )).all()
-        new_campaign.templates = linked
+        new_campaign.templates = linked_tpls
+
+    # Link selected sending profiles to the campaign
+    if profile_ids:
+        linked_profs = SendingProfile.query.filter(SendingProfile.id.in_(
+            [int(i) for i in profile_ids if str(i).isdigit()]
+        )).all()
+        new_campaign.profiles = linked_profs
 
     db.session.add(new_campaign)
     db.session.commit()
@@ -248,6 +257,10 @@ def campaign_status(campaign_id):
         clicks  = sum(1 for e in t.events if e.type == 'click')
         submits = sum(1 for e in t.events if e.type == 'submit')
         captured = t.form_data[0].data if t.form_data else None
+
+        tpl_name = t.template.name if t.template else 'Default'
+        prof_name = t.sending_profile.name if t.sending_profile else 'Default'
+
         targets.append({
             'id':       t.id,
             'email':    t.email,
@@ -256,6 +269,8 @@ def campaign_status(campaign_id):
             'clicks':   clicks,
             'submits':  submits,
             'captured': captured,
+            'template': tpl_name,
+            'sender':   prof_name,
         })
     return jsonify({'targets': targets})
 
@@ -264,8 +279,18 @@ def send_single_target(target_id):
     target   = Target.query.get_or_404(target_id)
     campaign = target.campaign
 
-    if not campaign.sender_email or not campaign.sender_password:
-        return {'success': False, 'message': 'Missing credentials'}, 400
+    # Pick a random profile if campaign has any linked
+    used_profile = None
+    linked_profiles = campaign.profiles
+    if linked_profiles:
+        used_profile = random.choice(linked_profiles)
+        target.sending_profile_id = used_profile.id
+
+    send_email = used_profile.email if used_profile else campaign.sender_email
+    send_pass  = used_profile.password if used_profile else campaign.sender_password
+
+    if not send_email or not send_pass:
+        return {'success': False, 'message': 'Missing sender credentials (no campaign default or profile assigned)'}, 400
 
     # Pick a random template if the campaign has any linked,
     # OR fall back to any available template if campaign subject/body are empty
@@ -293,8 +318,8 @@ def send_single_target(target_id):
 
     try:
         success = send_campaign_email(
-            campaign.sender_email,
-            campaign.sender_password,
+            send_email,
+            send_pass,
             target.email,
             subject,
             body,
@@ -306,7 +331,8 @@ def send_single_target(target_id):
         return {
             'success': success,
             'status': target.status,
-            'template': used_tpl.name if used_tpl else 'default'
+            'template': used_tpl.name if used_tpl else 'Default',
+            'sender': used_profile.name if used_profile else 'Default'
         }
     except Exception as e:
         target.status = 'Error'
@@ -456,6 +482,45 @@ def template_delete(tpl_id):
     db.session.delete(tpl)
     db.session.commit()
     return redirect(url_for('templates_list'))
+
+# ─── Sending Profile Library CRUD ───────────────────────────────────────────
+
+@app.route('/profiles')
+@admin_required
+def profiles_list():
+    profiles = SendingProfile.query.order_by(SendingProfile.created_at.desc()).all()
+    return render_template('sending_profiles.html', profiles=profiles)
+
+@app.route('/profiles/new', methods=['POST'])
+@admin_required
+def profile_new():
+    name     = request.form.get('name', '').strip()
+    email    = request.form.get('email', '').strip()
+    password = request.form.get('password', '').strip()
+    if not name or not email or not password:
+        return redirect(url_for('profiles_list'))
+    prof = SendingProfile(name=name, email=email, password=password)
+    db.session.add(prof)
+    db.session.commit()
+    return redirect(url_for('profiles_list'))
+
+@app.route('/profiles/<int:prof_id>/edit', methods=['POST'])
+@admin_required
+def profile_edit(prof_id):
+    prof = SendingProfile.query.get_or_404(prof_id)
+    prof.name     = request.form.get('name', prof.name).strip()
+    prof.email    = request.form.get('email', prof.email).strip()
+    prof.password = request.form.get('password', prof.password).strip()
+    db.session.commit()
+    return redirect(url_for('profiles_list'))
+
+@app.route('/profiles/<int:prof_id>/delete', methods=['POST'])
+@admin_required
+def profile_delete(prof_id):
+    prof = SendingProfile.query.get_or_404(prof_id)
+    db.session.delete(prof)
+    db.session.commit()
+    return redirect(url_for('profiles_list'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)

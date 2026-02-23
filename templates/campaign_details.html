@@ -452,6 +452,8 @@
                 <thead>
                     <tr>
                         <th>Target</th>
+                        <th>Template</th>
+                        <th>From</th>
                         <th>Status</th>
                         <th>Email Open</th>
                         <th>Link Click</th>
@@ -465,6 +467,16 @@
                         <td>
                             <div class="target-email">{{ target.email }}</div>
                             <div class="tracking-id">ID: {{ target.tracking_id[:8] }}...</div>
+                        </td>
+                        <td id="template-{{ target.id }}">
+                            <span style="font-size:0.72rem; color:var(--green-dim); opacity:0.8;">
+                                {{ target.template.name if target.template else 'Default' }}
+                            </span>
+                        </td>
+                        <td id="sender-{{ target.id }}">
+                            <span style="font-size:0.72rem; color:var(--cyan-dim); opacity:0.8;">
+                                {{ target.sending_profile.name if target.sending_profile else 'Default' }}
+                            </span>
                         </td>
                         <td>
                             <span id="status-{{ target.id }}" class="badge
@@ -551,6 +563,12 @@
                         statusEl.textContent = t.status.toUpperCase();
                         statusEl.dataset.status = t.status;
                     }
+                    // Template & Sender
+                    const tplEl = document.getElementById(`template-${t.id}`);
+                    if (tplEl) tplEl.innerHTML = `<span style="font-size:0.72rem; color:var(--green-dim); opacity:0.8;">${t.template}</span>`;
+                    const sndEl = document.getElementById(`sender-${t.id}`);
+                    if (sndEl) sndEl.innerHTML = `<span style="font-size:0.72rem; color:var(--cyan-dim); opacity:0.8;">${t.sender}</span>`;
+
                     // Open
                     const openEl = document.getElementById(`open-${t.id}`);
                     if (openEl) openEl.innerHTML = badgeHtml(t.opens, 'badge-yes-warn', 'YES', 'NO');

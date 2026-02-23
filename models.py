@@ -9,11 +9,24 @@ campaign_templates = db.Table('campaign_templates',
     db.Column('template_id', db.Integer, db.ForeignKey('email_template.id'), primary_key=True)
 )
 
+# Many-to-many: a campaign can rotate across multiple sending profiles
+campaign_profiles = db.Table('campaign_profiles',
+    db.Column('campaign_id', db.Integer, db.ForeignKey('campaign.id'), primary_key=True),
+    db.Column('profile_id', db.Integer, db.ForeignKey('sending_profile.id'), primary_key=True)
+)
+
 class EmailTemplate(db.Model):
     id         = db.Column(db.Integer, primary_key=True)
     name       = db.Column(db.String(120), nullable=False)
     subject    = db.Column(db.String(200), nullable=False)
     body       = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+class SendingProfile(db.Model):
+    id         = db.Column(db.Integer, primary_key=True)
+    name       = db.Column(db.String(120), nullable=False)
+    email      = db.Column(db.String(120), nullable=False)
+    password   = db.Column(db.String(120), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
 class Campaign(db.Model):
@@ -29,16 +42,22 @@ class Campaign(db.Model):
     targets         = db.relationship('Target', backref='campaign', lazy=True)
     # Linked templates for rotation (optional — falls back to campaign subject/body if empty)
     templates       = db.relationship('EmailTemplate', secondary=campaign_templates, lazy='subquery')
+    # Linked sending profiles for rotation (optional — falls back to campaign credentials if empty)
+    profiles        = db.relationship('SendingProfile', secondary=campaign_profiles, lazy='subquery')
 
 class Target(db.Model):
     id           = db.Column(db.Integer, primary_key=True)
     email        = db.Column(db.String(120), nullable=False)
     tracking_id  = db.Column(db.String(36), unique=True, nullable=False)
     campaign_id  = db.Column(db.Integer, db.ForeignKey('campaign.id'), nullable=False)
-    status       = db.Column(db.String(20), default='sent')
-    template_id  = db.Column(db.Integer, db.ForeignKey('email_template.id'), nullable=True)
+    status             = db.Column(db.String(20), default='sent')
+    template_id        = db.Column(db.Integer, db.ForeignKey('email_template.id'), nullable=True)
+    sending_profile_id = db.Column(db.Integer, db.ForeignKey('sending_profile.id'), nullable=True)
     events       = db.relationship('Event', backref='target', lazy=True)
     form_data    = db.relationship('FormData', backref='target', lazy=True)
+    # Relationships for rotation info
+    template     = db.relationship('EmailTemplate', lazy=True)
+    sending_profile = db.relationship('SendingProfile', lazy=True)
 
 class Event(db.Model):
     id         = db.Column(db.Integer, primary_key=True)

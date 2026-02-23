@@ -550,6 +550,9 @@
                 <a href="/templates" class="nav-item">
                     <span class="nav-icon">▣</span> Templates
                 </a>
+                <a href="/profiles" class="nav-item">
+                    <span class="nav-icon">✉</span> Sending Profiles
+                </a>
                 <a href="/settings" class="nav-item">
                     <span class="nav-icon">◇</span> Settings
                 </a>
@@ -606,8 +609,8 @@
                             style="background:rgba(0,212,255,0.04); border:1px solid var(--border); border-radius:3px; padding:0.75rem 1rem; margin-bottom:0.9rem;">
                             <div style="display:flex; align-items:center; justify-content:space-between;">
                                 <div>
-                                    <div style="font-size:0.75rem; color:var(--cyan); letter-spacing:1px;">// USE
-                                        TEMPLATE ROTATION</div>
+                                    <div style="font-size:0.75rem; color:var(--cyan); letter-spacing:1px;">// EMAIL
+                                        (TEMPLATE) ROTATION</div>
                                     <div
                                         style="font-size:0.62rem; color:var(--text-secondary); margin-top:3px; letter-spacing:0;">
                                         Each target gets a random template — hides default subject/body</div>
@@ -647,13 +650,70 @@
                         </div>
                         {% endif %}
 
-                        <div class="form-group">
-                            <label>GMAIL ADDRESS</label>
-                            <input type="email" name="sender_email" required placeholder="your.email@gmail.com">
+                        <!-- Sender Rotation toggle -->
+                        <div class="form-group"
+                            style="margin-bottom: 1.2rem; background: rgba(0, 212, 255, 0.04); border: 1px solid var(--border); border-radius: 4px; padding: 0.8rem 1rem;">
+                            <div style="display:flex; align-items:center; justify-content:space-between;">
+                                <div>
+                                    <div style="font-size:0.75rem; color:var(--cyan); letter-spacing:1px;">// SENDER
+                                        ROTATION</div>
+                                    <div
+                                        style="font-size:0.62rem; color:var(--text-secondary); margin-top:3px; letter-spacing:0;">
+                                        Rotate multiple SMTP accounts — bypasses single-email filters</div>
+                                </div>
+                                <label class="tpl-toggle-wrap"
+                                    style="position:relative; width:44px; height:22px; cursor:pointer;">
+                                    <input type="checkbox" id="profRotationToggle"
+                                        style="opacity:0; width:0; height:0;">
+                                    <span id="profSlider"
+                                        style="position:absolute; inset:0; background:var(--bg3); border:1px solid var(--border); border-radius:11px; transition:0.25s;">
+                                        <span id="profSliderDot"
+                                            style="position:absolute; width:14px; height:14px; background:var(--text-secondary); border-radius:50%; left:3px; top:3px; transition:0.25s;"></span>
+                                    </span>
+                                </label>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>APP PASSWORD</label>
-                            <input type="password" name="sender_password" required placeholder="••••••••••••••••">
+
+                        <!-- Profile picker (visible when toggle ON) -->
+                        <div id="profPickerSection" style="display:none;">
+                            <div class="form-group">
+                                <label>SELECT SENDING PROFILES</label>
+                                <div
+                                    style="display:flex; flex-direction:column; gap:0.4rem; max-height:150px; overflow-y:auto; padding:0.4rem; background:rgba(26,45,74,0.4); border:1px solid var(--border); border-radius:2px;">
+                                    {% if profiles %}
+                                    {% for prof in profiles %}
+                                    <label
+                                        style="display:flex; align-items:center; gap:0.6rem; padding:0.3rem 0; border-bottom:1px solid rgba(30,58,95,0.4); color:var(--text-body); font-size:0.74rem; cursor:pointer; letter-spacing:0;">
+                                        <input type="checkbox" name="profile_ids" value="{{ prof.id }}"
+                                            style="width:auto; accent-color:var(--cyan);">
+                                        <span style="color:var(--green);">{{ prof.name }}</span>
+                                        <span style="color:var(--text-secondary); font-size:0.65rem;">— {{ prof.email
+                                            }}</span>
+                                    </label>
+                                    {% endfor %}
+                                    {% else %}
+                                    <div
+                                        style="font-size:0.65rem; color:var(--text-secondary); text-align:center; padding:1rem;">
+                                        <a href="/profiles" style="color:var(--cyan); text-decoration:none;">Add
+                                            profiles</a> to enable rotation
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <label class="hint">Emails will be balanced randomly across these accounts</label>
+                            </div>
+                        </div>
+
+                        <div id="defaultSenderSection">
+                            <div class="form-group">
+                                <label>GMAIL ADDRESS</label>
+                                <input type="email" name="sender_email" id="senderEmailInput" required
+                                    placeholder="your.email@gmail.com">
+                            </div>
+                            <div class="form-group">
+                                <label>APP PASSWORD</label>
+                                <input type="password" name="sender_password" id="senderPassInput" required
+                                    placeholder="••••••••••••••••">
+                            </div>
                         </div>
 
                         <!-- Default email fields (hidden when template mode ON) -->
@@ -786,34 +846,94 @@
             const subjInput = document.getElementById('subjectInput');
             const bodyInput = document.getElementById('bodyInput');
 
-            function applyToggleState(on) {
+            function applyTplToggle(on) {
+                localStorage.setItem('rex_tpl_rotation', on);
                 if (on) {
                     picker.style.display = 'block';
                     defaults.style.display = 'none';
-                    // visually activate slider
-                    slider.style.background = 'rgba(0,212,255,0.15)';
-                    slider.style.borderColor = 'var(--cyan)';
-                    dot.style.transform = 'translateX(22px)';
-                    dot.style.background = 'var(--cyan)';
-                    dot.style.boxShadow = '0 0 6px var(--cyan)';
-                    // make subject/body optional since templates provide them
+                    if (slider) {
+                        slider.style.background = 'rgba(0,212,255,0.15)';
+                        slider.style.borderColor = 'var(--cyan)';
+                    }
+                    if (dot) {
+                        dot.style.transform = 'translateX(22px)';
+                        dot.style.background = 'var(--cyan)';
+                        dot.style.boxShadow = '0 0 6px var(--cyan)';
+                    }
                     if (subjInput) subjInput.removeAttribute('required');
                     if (bodyInput) bodyInput.removeAttribute('required');
                 } else {
                     picker.style.display = 'none';
                     defaults.style.display = 'block';
-                    slider.style.background = 'var(--bg3)';
-                    slider.style.borderColor = 'var(--border)';
-                    dot.style.transform = 'translateX(0)';
-                    dot.style.background = 'var(--text-secondary)';
-                    dot.style.boxShadow = 'none';
+                    if (slider) {
+                        slider.style.background = 'var(--bg3)';
+                        slider.style.borderColor = 'var(--border)';
+                    }
+                    if (dot) {
+                        dot.style.transform = 'translateX(0)';
+                        dot.style.background = 'var(--text-secondary)';
+                        dot.style.boxShadow = 'none';
+                    }
                     if (subjInput) subjInput.setAttribute('required', '');
                     if (bodyInput) bodyInput.setAttribute('required', '');
                 }
             }
+            tplToggle.addEventListener('change', () => applyTplToggle(tplToggle.checked));
 
-            tplToggle.addEventListener('change', () => applyToggleState(tplToggle.checked));
-            applyToggleState(false); // start with default fields visible
+            // Restore state
+            const savedTpl = localStorage.getItem('rex_tpl_rotation') === 'true';
+            tplToggle.checked = savedTpl;
+            applyTplToggle(savedTpl);
+        }
+
+        // ── Profile rotation toggle ──────────────────────────────────
+        const profToggle = document.getElementById('profRotationToggle');
+        if (profToggle) {
+            const picker = document.getElementById('profPickerSection');
+            const defaults = document.getElementById('defaultSenderSection');
+            const slider = document.getElementById('profSlider');
+            const dot = document.getElementById('profSliderDot');
+            const emailInput = document.getElementById('senderEmailInput');
+            const passInput = document.getElementById('senderPassInput');
+
+            function applyProfToggle(on) {
+                localStorage.setItem('rex_prof_rotation', on);
+                if (on) {
+                    picker.style.display = 'block';
+                    defaults.style.display = 'none';
+                    if (slider) {
+                        slider.style.background = 'rgba(0,212,255,0.15)';
+                        slider.style.borderColor = 'var(--cyan)';
+                    }
+                    if (dot) {
+                        dot.style.transform = 'translateX(22px)';
+                        dot.style.background = 'var(--cyan)';
+                        dot.style.boxShadow = '0 0 6px var(--cyan)';
+                    }
+                    if (emailInput) emailInput.removeAttribute('required');
+                    if (passInput) passInput.removeAttribute('required');
+                } else {
+                    picker.style.display = 'none';
+                    defaults.style.display = 'block';
+                    if (slider) {
+                        slider.style.background = 'var(--bg3)';
+                        slider.style.borderColor = 'var(--border)';
+                    }
+                    if (dot) {
+                        dot.style.transform = 'translateX(0)';
+                        dot.style.background = 'var(--text-secondary)';
+                        dot.style.boxShadow = 'none';
+                    }
+                    if (emailInput) emailInput.setAttribute('required', '');
+                    if (passInput) passInput.setAttribute('required', '');
+                }
+            }
+            profToggle.addEventListener('change', () => applyProfToggle(profToggle.checked));
+
+            // Restore state
+            const savedProf = localStorage.getItem('rex_prof_rotation') === 'true';
+            profToggle.checked = savedProf;
+            applyProfToggle(savedProf);
         }
 
         // ── CSV Upload ────────────────────────────────────────────
