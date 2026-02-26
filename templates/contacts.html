@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rex | Sending Profiles</title>
+    <title>Rex | Contact Book</title>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap"
         rel="stylesheet">
     <style>
@@ -219,7 +219,7 @@
 
         .page-grid {
             display: grid;
-            grid-template-columns: 1.1fr 1fr;
+            grid-template-columns: 1.3fr 1fr;
             gap: 1.5rem;
             align-items: start;
         }
@@ -273,8 +273,7 @@
         }
 
         input[type="text"],
-        input[type="email"],
-        input[type="password"] {
+        input[type="email"] {
             width: 100%;
             padding: 0.6rem 0.85rem;
             background: rgba(26, 45, 74, 0.6);
@@ -308,8 +307,6 @@
             margin-top: 0.5rem;
             transition: all 0.25s;
             text-shadow: 0 0 8px var(--cyan);
-            position: relative;
-            overflow: hidden;
         }
 
         .btn-primary:hover {
@@ -318,126 +315,79 @@
             color: #fff;
         }
 
-        /* PROFILE LIST */
-        .prof-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .prof-card {
-            background: var(--bg3);
-            border: 1px solid var(--border);
-            border-radius: 3px;
-            padding: 0.8rem 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: border-color 0.2s;
-        }
-
-        .prof-card:hover {
-            border-color: rgba(0, 212, 255, 0.3);
-        }
-
-        .prof-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .prof-name {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.7rem;
-            color: var(--green);
-            letter-spacing: 2px;
-            text-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
-        }
-
-        .prof-email {
-            font-size: 0.68rem;
-            color: var(--text-secondary);
-            margin-top: 2px;
-        }
-
-        .btn-edit,
-        .btn-del {
-            background: none;
-            border: 1px solid var(--border);
+        .btn-danger {
+            width: 100%;
+            padding: 0.65rem;
+            background: rgba(255, 60, 60, 0.05);
+            border: 1px solid rgba(255, 60, 60, 0.4);
             border-radius: 2px;
-            font-family: 'Share Tech Mono', monospace;
+            color: var(--red);
+            font-family: 'Orbitron', sans-serif;
             font-size: 0.65rem;
-            padding: 0.3rem 0.6rem;
+            letter-spacing: 3px;
             cursor: pointer;
-            letter-spacing: 1px;
+            margin-top: 0.5rem;
             transition: all 0.2s;
         }
 
-        .btn-edit {
-            color: var(--cyan);
+        .btn-danger:hover {
+            background: rgba(255, 60, 60, 0.12);
+            border-color: var(--red);
         }
 
-        .btn-edit:hover {
-            border-color: var(--cyan);
-            background: rgba(0, 212, 255, 0.07);
+        /* CONTACT LIST */
+        .contact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+        }
+
+        .contact-table th {
+            color: var(--cyan);
+            font-size: 0.6rem;
+            letter-spacing: 2px;
+            text-align: left;
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0, 212, 255, 0.03);
+        }
+
+        .contact-table td {
+            padding: 0.55rem 0.75rem;
+            border-bottom: 1px solid rgba(30, 58, 95, 0.6);
+            vertical-align: middle;
+        }
+
+        .contact-table tr:hover td {
+            background: rgba(0, 212, 255, 0.03);
+        }
+
+        .contact-name {
+            color: var(--green);
+            font-size: 0.76rem;
+        }
+
+        .contact-email {
+            color: var(--text-secondary);
+            font-size: 0.7rem;
         }
 
         .btn-del {
-            border-color: rgba(255, 60, 60, 0.3);
+            background: none;
+            border: 1px solid rgba(255, 60, 60, 0.3);
+            border-radius: 2px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.62rem;
+            padding: 0.25rem 0.55rem;
+            cursor: pointer;
             color: var(--red);
+            letter-spacing: 1px;
+            transition: all 0.2s;
         }
 
         .btn-del:hover {
             border-color: var(--red);
             background: rgba(255, 60, 60, 0.1);
-        }
-
-        /* Modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(5, 14, 30, 0.85);
-            z-index: 200;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-overlay.show {
-            display: flex;
-        }
-
-        .modal {
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            padding: 1.5rem;
-            width: min(440px, 95vw);
-            box-shadow: 0 0 40px rgba(0, 212, 255, 0.12);
-        }
-
-        .modal-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.75rem;
-            color: var(--cyan);
-            letter-spacing: 3px;
-            margin-bottom: 1.2rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .btn-cancel {
-            width: 100%;
-            padding: 0.6rem;
-            background: rgba(255, 60, 60, 0.05);
-            border: 1px solid rgba(255, 60, 60, 0.3);
-            border-radius: 2px;
-            color: var(--red);
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.75rem;
-            cursor: pointer;
-            margin-top: 0.5rem;
-            transition: all 0.2s;
         }
 
         .hint-box {
@@ -449,6 +399,17 @@
             font-size: 0.7rem;
             color: var(--text-secondary);
             line-height: 1.6;
+        }
+
+        /* CSV Upload area */
+        .csv-area {
+            background: rgba(26, 45, 74, 0.4);
+            border: 1px dashed rgba(0, 212, 255, 0.2);
+            border-radius: 2px;
+            padding: 0.75rem 1rem;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-top: 0.4rem;
         }
     </style>
 </head>
@@ -469,8 +430,8 @@
                 <a href="/" class="nav-item"><span class="nav-icon">⬡</span> Dashboard</a>
                 <a href="/analytics" class="nav-item"><span class="nav-icon">◈</span> Analytics</a>
                 <a href="/templates" class="nav-item"><span class="nav-icon">▣</span> Templates</a>
-                <a href="/profiles" class="nav-item active"><span class="nav-icon">✉</span> Sending Profiles</a>
-                <a href="/contacts" class="nav-item"><span class="nav-icon">☎</span> Contacts</a>
+                <a href="/profiles" class="nav-item"><span class="nav-icon">✉</span> Sending Profiles</a>
+                <a href="/contacts" class="nav-item active"><span class="nav-icon">☎</span> Contacts</a>
                 <a href="/settings" class="nav-item"><span class="nav-icon">◇</span> Settings</a>
             </nav>
         </div>
@@ -487,82 +448,121 @@
     <!-- MAIN -->
     <div class="main-content">
         <div class="topbar">
-            <span class="topbar-title">SENDING PROFILES</span>
-            <span style="font-size:0.65rem; color:var(--text-secondary); letter-spacing:1px;"
-                id="p-clock">--:--:--</span>
+            <span class="topbar-title">CONTACT BOOK</span>
+            <div style="display:flex;align-items:center;gap:1rem;">
+                <span style="font-size:0.65rem;color:var(--text-secondary);">{{ contacts|length }} contacts</span>
+                <span style="font-size:0.65rem; color:var(--text-secondary); letter-spacing:1px;"
+                    id="c-clock">--:--:--</span>
+            </div>
         </div>
 
         <div class="page-grid">
-            <!-- LEFT: Profile list -->
+            <!-- LEFT: Contact list -->
             <div>
                 <div class="card">
-                    <div class="card-header">
-                        <span style="font-size:0.9rem;">📫</span>
-                        <span class="card-header-title">SAVED PROFILES</span>
-                        <span
-                            style="background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); color:var(--green); font-size:0.6rem; padding:1px 7px; border-radius:2px; margin-left:0.6rem;">{{
-                            profiles|length }}</span>
-                    </div>
-                    <div class="card-body">
-                        {% if profiles %}
-                        <div class="prof-list">
-                            {% for prof in profiles %}
-                            <div class="prof-card" data-id="{{ prof.id }}" data-name="{{ prof.name|e }}"
-                                data-email="{{ prof.email|e }}" data-pass="{{ prof.password|e }}">
-                                <div class="prof-info">
-                                    <div class="prof-name">{{ prof.name }}</div>
-                                    <div class="prof-email">{{ prof.email }}</div>
-                                </div>
-                                <div style="display:flex; gap:0.5rem;">
-                                    <button class="btn-edit"
-                                        onclick="openEdit('{{ prof.id }}', '{{ prof.name|e }}', '{{ prof.email|e }}', '{{ prof.password|e }}')">EDIT</button>
-                                    <form action="/profiles/{{ prof.id }}/delete" method="POST"
-                                        onsubmit="return confirm('Delete this profile?');">
-                                        <button type="submit" class="btn-del">DEL</button>
-                                    </form>
-                                </div>
-                            </div>
-                            {% endfor %}
+                    <div class="card-header" style="justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:0.6rem;">
+                            <span style="font-size:0.9rem;">☎</span>
+                            <span class="card-header-title">SAVED CONTACTS</span>
+                            <span
+                                style="background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);color:var(--green);font-size:0.6rem;padding:1px 7px;border-radius:2px;margin-left:0.6rem;">{{
+                                contacts|length }}</span>
                         </div>
+                        {% if contacts %}
+                        <form action="/contacts/delete_all" method="POST"
+                            onsubmit="return confirm('Delete ALL contacts? This cannot be undone.');">
+                            <button type="submit" class="btn-del" style="font-size:0.6rem;padding:0.2rem 0.5rem;">⚠ DEL
+                                ALL</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    <div class="card-body" style="padding:0;">
+                        {% if contacts %}
+                        <table class="contact-table">
+                            <thead>
+                                <tr>
+                                    <th>NAME</th>
+                                    <th>EMAIL</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for c in contacts %}
+                                <tr>
+                                    <td>
+                                        <div class="contact-name">{{ c.name or '—' }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="contact-email">{{ c.email }}</div>
+                                    </td>
+                                    <td style="text-align:right;padding-right:1rem;">
+                                        <form action="/contacts/{{ c.id }}/delete" method="POST" style="display:inline;"
+                                            onsubmit="return confirm('Delete {{ c.email }}?');">
+                                            <button type="submit" class="btn-del">DEL</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                         {% else %}
-                        <div style="text-align:center; color:var(--text-secondary); padding:2rem; font-size:0.75rem;">//
-                            No profiles yet — add one →</div>
+                        <div style="text-align:center;color:var(--text-secondary);padding:2.5rem;font-size:0.75rem;">//
+                            No contacts yet — add one or import CSV →</div>
                         {% endif %}
                     </div>
                 </div>
             </div>
 
-            <!-- RIGHT: New profile form -->
-            <div>
+            <!-- RIGHT: Add / Import -->
+            <div style="display:flex;flex-direction:column;gap:1rem;">
                 <div class="hint-box">
-                    <strong style="color:var(--cyan); letter-spacing:1px;">ROTATION STRATEGY</strong><br>
-                    Add multiple accounts to bypass Gmail/Mimecast sending limits. The system will randomly pick an
-                    account for each email in a batch.
-                    <br><br>
-                    <strong style="color:var(--cyan); letter-spacing:1px;">GMAIL USERS</strong><br>
-                    You <u>must</u> use a 16-character **App Password**, not your regular password. Enable 2FA first.
+                    <strong style="color:var(--cyan);letter-spacing:1px;">PLACEHOLDERS</strong><br>
+                    Use <code style="color:var(--green);">{{target}}</code> in your template body or subject to insert
+                    the contact's name.<br><br>
+                    Use <code style="color:var(--cyan);">{{sender}}</code> to insert the sending profile's name.
                 </div>
 
+                <!-- ADD ONE -->
                 <div class="card">
                     <div class="card-header">
                         <span style="font-size:0.9rem;">✚</span>
-                        <span class="card-header-title">NEW PROFILE</span>
+                        <span class="card-header-title">ADD CONTACT</span>
                     </div>
                     <div class="card-body">
-                        <form action="/profiles/new" method="POST">
+                        <form action="/contacts/new" method="POST">
                             <div class="form-group">
-                                <label>PROFILE NAME</label>
-                                <input type="text" name="name" required placeholder="e.g. Gmail - Main Account">
+                                <label>FULL NAME (optional)</label>
+                                <input type="text" name="name" placeholder="John Smith">
                             </div>
                             <div class="form-group">
                                 <label>EMAIL ADDRESS</label>
-                                <input type="email" name="email" required placeholder="your.name@gmail.com">
+                                <input type="email" name="email" required placeholder="target@company.com">
+                            </div>
+                            <button type="submit" class="btn-primary">[ ADD CONTACT ]</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- IMPORT CSV -->
+                <div class="card">
+                    <div class="card-header">
+                        <span style="font-size:0.9rem;">📄</span>
+                        <span class="card-header-title">IMPORT CSV</span>
+                    </div>
+                    <div class="card-body">
+                        <form action="/contacts/import_csv" method="POST" enctype="multipart/form-data">
+                            <div class="hint-box" style="margin-bottom:0.8rem;">
+                                CSV format: <code style="color:var(--green);">name,email</code> (one per line, header
+                                optional)
                             </div>
                             <div class="form-group">
-                                <label>APP PASSWORD</label>
-                                <input type="password" name="password" required placeholder="xxxx xxxx xxxx xxxx">
+                                <label>CSV FILE</label>
+                                <div class="csv-area">
+                                    <input type="file" name="csv_file" accept=".csv,.txt"
+                                        style="color:var(--text-primary);font-family:'Share Tech Mono',monospace;font-size:0.75rem;width:100%;cursor:pointer;">
+                                </div>
                             </div>
-                            <button type="submit" class="btn-primary">[ SAVE PROFILE ]</button>
+                            <button type="submit" class="btn-primary">[ IMPORT ]</button>
                         </form>
                     </div>
                 </div>
@@ -570,49 +570,12 @@
         </div>
     </div>
 
-    <!-- Edit Modal -->
-    <div class="modal-overlay" id="edit-modal">
-        <div class="modal">
-            <div class="modal-title">EDIT PROFILE</div>
-            <form id="edit-form" method="POST">
-                <div class="form-group">
-                    <label>PROFILE NAME</label>
-                    <input type="text" name="name" id="edit-name" required>
-                </div>
-                <div class="form-group">
-                    <label>EMAIL ADDRESS</label>
-                    <input type="email" name="email" id="edit-email" required>
-                </div>
-                <div class="form-group">
-                    <label>APP PASSWORD</label>
-                    <input type="password" name="password" id="edit-pass" required>
-                </div>
-                <button type="submit" class="btn-primary">[ SAVE CHANGES ]</button>
-                <button type="button" class="btn-cancel" onclick="closeEdit()">[ CANCEL ]</button>
-            </form>
-        </div>
-    </div>
-
     <script>
         function updateClock() {
             const n = new Date(), pad = v => String(v).padStart(2, '0');
-            document.getElementById('p-clock').textContent = `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+            document.getElementById('c-clock').textContent = `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
         }
         setInterval(updateClock, 1000); updateClock();
-
-        function openEdit(id, name, email, pass) {
-            document.getElementById('edit-form').action = '/profiles/' + id + '/edit';
-            document.getElementById('edit-name').value = name;
-            document.getElementById('edit-email').value = email;
-            document.getElementById('edit-pass').value = pass;
-            document.getElementById('edit-modal').classList.add('show');
-        }
-
-        function closeEdit() { document.getElementById('edit-modal').classList.remove('show'); }
-
-        window.onclick = function (e) {
-            if (e.target == document.getElementById('edit-modal')) closeEdit();
-        }
     </script>
 </body>
 

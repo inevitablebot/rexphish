@@ -550,9 +550,8 @@
                 <a href="/templates" class="nav-item">
                     <span class="nav-icon">▣</span> Templates
                 </a>
-                <a href="/profiles" class="nav-item">
-                    <span class="nav-icon">✉</span> Sending Profiles
-                </a>
+                <a href="/profiles" class="nav-item"><span class="nav-icon">✉</span> Sending Profiles</a>
+                <a href="/contacts" class="nav-item"><span class="nav-icon">☎</span> Contacts</a>
                 <a href="/settings" class="nav-item">
                     <span class="nav-icon">◇</span> Settings
                 </a>
@@ -628,10 +627,17 @@
                             </div>
                         </div>
 
-                        <!-- Template picker (visible when toggle ON) -->
                         <div id="tplPickerSection" style="display:none;">
                             <div class="form-group">
-                                <label>SELECT TEMPLATES TO ROTATE</label>
+                                <div
+                                    style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.4rem;">
+                                    <label style="margin:0;">SELECT TEMPLATES TO ROTATE</label>
+                                    <button type="button" id="tplSelectAll"
+                                        onclick="selectAllCheckboxes('template_ids','tplSelectAll')"
+                                        style="padding:0.18rem 0.6rem; background:transparent; border:1px solid var(--cyan); border-radius:2px; color:var(--cyan); font-family:inherit; font-size:0.62rem; letter-spacing:1px; cursor:pointer;">
+                                        SELECT ALL
+                                    </button>
+                                </div>
                                 <div
                                     style="display:flex; flex-direction:column; gap:0.4rem; max-height:150px; overflow-y:auto; padding:0.4rem; background:rgba(26,45,74,0.4); border:1px solid var(--border); border-radius:2px;">
                                     {% for tpl in templates %}
@@ -730,28 +736,64 @@
                                 <label class="hint">Use &#123;&#123;link&#125;&#125; to insert tracking link</label>
                             </div>
                         </div>
-                        <!-- TARGET LIST with CSV upload -->
+                        <!-- TARGET LIST with Contacts / Manual / CSV tabs -->
                         <div class="form-group">
                             <div
                                 style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
                                 <label style="margin:0;">TARGET LIST</label>
                                 <div
-                                    style="display:flex; gap:0;
-                                    border:1px solid var(--border); border-radius:3px; overflow:hidden; font-size:0.65rem;">
-                                    <button type="button" id="tabManual" onclick="switchTab('manual')" style="padding:0.25rem 0.7rem; background:var(--cyan); color:var(--bg);
-                                               border:none; cursor:pointer; font-family:inherit; letter-spacing:1px;">
+                                    style="display:flex; gap:0; border:1px solid var(--border); border-radius:3px; overflow:hidden; font-size:0.65rem;">
+                                    {% if contacts %}
+                                    <button type="button" id="tabContacts" onclick="switchTab('contacts')"
+                                        style="padding:0.25rem 0.7rem; background:var(--cyan); color:var(--bg); border:none; cursor:pointer; font-family:inherit; letter-spacing:1px;">
+                                        ☎ CONTACTS
+                                    </button>
+                                    {% endif %}
+                                    <button type="button" id="tabManual" onclick="switchTab('manual')"
+                                        style="padding:0.25rem 0.7rem; background:transparent; color:var(--text-secondary); border:none; cursor:pointer; font-family:inherit; letter-spacing:1px;">
                                         MANUAL
                                     </button>
-                                    <button type="button" id="tabCsv" onclick="switchTab('csv')" style="padding:0.25rem 0.7rem; background:transparent; color:var(--text-secondary);
-                                               border:none; cursor:pointer; font-family:inherit; letter-spacing:1px;">
+                                    <button type="button" id="tabCsv" onclick="switchTab('csv')"
+                                        style="padding:0.25rem 0.7rem; background:transparent; color:var(--text-secondary); border:none; cursor:pointer; font-family:inherit; letter-spacing:1px;">
                                         UPLOAD CSV
                                     </button>
                                 </div>
                             </div>
 
+                            <!-- Contacts panel -->
+                            {% if contacts %}
+                            <div id="panelContacts">
+                                <div
+                                    style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.4rem;">
+                                    <span style="font-size:0.62rem; color:var(--text-secondary); letter-spacing:0;">{{
+                                        contacts|length }} contact(s) in book</span>
+                                    <button type="button" id="contactSelectAll"
+                                        onclick="selectAllCheckboxes('contact_ids','contactSelectAll')"
+                                        style="padding:0.18rem 0.6rem; background:transparent; border:1px solid var(--green); border-radius:2px; color:var(--green); font-family:inherit; font-size:0.62rem; letter-spacing:1px; cursor:pointer;">
+                                        SELECT ALL
+                                    </button>
+                                </div>
+                                <div
+                                    style="display:flex; flex-direction:column; gap:0.35rem; max-height:200px; overflow-y:auto; padding:0.4rem; background:rgba(26,45,74,0.4); border:1px solid var(--border); border-radius:2px;">
+                                    {% for c in contacts %}
+                                    <label
+                                        style="display:flex; align-items:center; gap:0.6rem; padding:0.28rem 0; border-bottom:1px solid rgba(30,58,95,0.4); color:var(--text-body); font-size:0.74rem; cursor:pointer; letter-spacing:0;">
+                                        <input type="checkbox" name="contact_ids" value="{{ c.id }}"
+                                            style="width:auto; accent-color:var(--green);">
+                                        <span style="color:var(--green);">{{ c.name or c.email }}</span>
+                                        <span style="color:var(--text-secondary); font-size:0.65rem;">{{ c.email
+                                            }}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                                <label class="hint">Checked contacts will receive this campaign</label>
+                            </div>
+                            {% endif %}
+
                             <!-- Manual entry -->
-                            <div id="panelManual">
-                                <textarea id="recipientsInput" name="recipients" rows="5" required
+                            <div id="panelManual" {% if contacts %}style="display:none;" {% endif %}>
+                                <textarea id="recipientsInput" name="recipients" rows="5" {% if not contacts
+                                    %}required{% endif %}
                                     placeholder="target1@example.com&#10;target2@example.com"></textarea>
                                 <label class="hint">One email address per line</label>
                             </div>
@@ -936,25 +978,37 @@
             applyProfToggle(savedProf);
         }
 
-        // ── CSV Upload ────────────────────────────────────────────
+        // ── CSV Upload / Tab Switcher ──────────────────────────────
         function switchTab(tab) {
-            const isManual = tab === 'manual';
-            document.getElementById('panelManual').style.display = isManual ? 'block' : 'none';
-            document.getElementById('panelCsv').style.display = isManual ? 'none' : 'block';
+            const panels = { manual: 'panelManual', csv: 'panelCsv', contacts: 'panelContacts' };
+            const tabs = { manual: 'tabManual', csv: 'tabCsv', contacts: 'tabContacts' };
+            const recipientsInput = document.getElementById('recipientsInput');
 
-            const tabM = document.getElementById('tabManual');
-            const tabC = document.getElementById('tabCsv');
-            tabM.style.background = isManual ? 'var(--cyan)' : 'transparent';
-            tabM.style.color = isManual ? 'var(--bg)' : 'var(--text-secondary)';
-            tabC.style.background = isManual ? 'transparent' : 'var(--cyan)';
-            tabC.style.color = isManual ? 'var(--text-secondary)' : 'var(--bg)';
-
-            const ta = document.getElementById('recipientsInput');
-            if (isManual) {
-                ta.setAttribute('required', '');
-            } else {
-                ta.removeAttribute('required');
+            for (const [key, panelId] of Object.entries(panels)) {
+                const el = document.getElementById(panelId);
+                if (el) el.style.display = (key === tab) ? 'block' : 'none';
             }
+            for (const [key, tabId] of Object.entries(tabs)) {
+                const el = document.getElementById(tabId);
+                if (!el) continue;
+                el.style.background = (key === tab) ? 'var(--cyan)' : 'transparent';
+                el.style.color = (key === tab) ? 'var(--bg)' : 'var(--text-secondary)';
+            }
+
+            // Only require textarea when manual tab active
+            if (recipientsInput) {
+                if (tab === 'manual') recipientsInput.setAttribute('required', '');
+                else recipientsInput.removeAttribute('required');
+            }
+        }
+
+        // ── Select-All toggle helper ─────────────────────────────────
+        function selectAllCheckboxes(name, btnId) {
+            const boxes = document.querySelectorAll(`input[name="${name}"]`);
+            const btn = document.getElementById(btnId);
+            const allChecked = Array.from(boxes).every(b => b.checked);
+            boxes.forEach(b => b.checked = !allChecked);
+            if (btn) btn.textContent = allChecked ? 'SELECT ALL' : 'DESELECT ALL';
         }
 
         function parseCSVEmails(text) {

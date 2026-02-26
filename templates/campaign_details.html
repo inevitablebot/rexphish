@@ -359,6 +359,13 @@
             text-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
         }
 
+        .badge-bot {
+            background: rgba(136, 153, 170, 0.05);
+            border-color: rgba(136, 153, 170, 0.15);
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
         .badge-no {
             background: rgba(136, 153, 170, 0.07);
             border-color: rgba(136, 153, 170, 0.2);
@@ -488,17 +495,31 @@
                             </span>
                         </td>
                         <td id="open-{{ target.id }}">
-                            {% set opens = target.events|selectattr('type', 'equalto', 'open')|list %}
-                            {% if opens %}
-                            <span class="badge badge-yes-warn">YES ×{{ opens|length }}</span>
+                            {% set real_opens =
+                            target.events|selectattr('type','equalto','open')|rejectattr('is_bot')|list %}
+                            {% set bot_opens =
+                            target.events|selectattr('type','equalto','open')|selectattr('is_bot')|list %}
+                            {% if real_opens %}
+                            <span class="badge badge-yes-warn" title="IP: {{ real_opens[0].ip_address }}">YES ×{{
+                                real_opens|length }}</span>
+                            {% elif bot_opens %}
+                            <span class="badge badge-bot" title="Likely scanner — IP: {{ bot_opens[0].ip_address }}">⚠
+                                BOT?</span>
                             {% else %}
                             <span class="badge badge-no">NO</span>
                             {% endif %}
                         </td>
                         <td id="click-{{ target.id }}">
-                            {% set clicks = target.events|selectattr('type', 'equalto', 'click')|list %}
-                            {% if clicks %}
-                            <span class="badge badge-yes-warn">YES ×{{ clicks|length }}</span>
+                            {% set real_clicks =
+                            target.events|selectattr('type','equalto','click')|rejectattr('is_bot')|list %}
+                            {% set bot_clicks =
+                            target.events|selectattr('type','equalto','click')|selectattr('is_bot')|list %}
+                            {% if real_clicks %}
+                            <span class="badge badge-yes-warn" title="IP: {{ real_clicks[0].ip_address }}">YES ×{{
+                                real_clicks|length }}</span>
+                            {% elif bot_clicks %}
+                            <span class="badge badge-bot" title="Likely scanner — IP: {{ bot_clicks[0].ip_address }}">⚠
+                                BOT?</span>
                             {% else %}
                             <span class="badge badge-no">NO</span>
                             {% endif %}
@@ -514,8 +535,14 @@
                         <td id="data-{{ target.id }}">
                             {% if target.form_data %}
                             <details>
-                                <summary>[ VIEW DATA ]</summary>
-                                <pre>{{ target.form_data[0].data | tojson(indent=2) }}</pre>
+                                <summary>[ {{ target.form_data|length }} CAPTURE{% if target.form_data|length > 1 %}S{%
+                                    endif %} ]</summary>
+                                {% for fd in target.form_data %}
+                                <div style="font-size:0.6rem;color:var(--text-secondary);margin:0.4rem 0 0.1rem;">{{
+                                    loop.index }}. {{ fd.timestamp.strftime('%H:%M:%S') }} | IP: {{ fd.ip_address or '?'
+                                    }}</div>
+                                <pre>{{ fd.data | tojson(indent=2) }}</pre>
+                                {% endfor %}
                             </details>
                             {% else %}
                             <span class="dash-placeholder">—</span>
@@ -569,21 +596,38 @@
                     const sndEl = document.getElementById(`sender-${t.id}`);
                     if (sndEl) sndEl.innerHTML = `<span style="font-size:0.72rem; color:var(--cyan-dim); opacity:0.8;">${t.sender}</span>`;
 
-                    // Open
+                    // Open — distinguish real vs bot
                     const openEl = document.getElementById(`open-${t.id}`);
-                    if (openEl) openEl.innerHTML = badgeHtml(t.opens, 'badge-yes-warn', 'YES', 'NO');
-                    // Click
+                    if (openEl) {
+                        if (t.opens > 0)
+                            openEl.innerHTML = `<span class="badge badge-yes-warn" title="${t.opens} real open(s)">YES ×${t.opens}</span>`;
+                        else if (t.bot_opens > 0)
+                            openEl.innerHTML = `<span class="badge badge-bot" title="Likely scanner (${t.bot_opens} bot event)">⚠ BOT?</span>`;
+                        else
+                            openEl.innerHTML = `<span class="badge badge-no">NO</span>`;
+                    }
+                    // Click — distinguish real vs bot
                     const clickEl = document.getElementById(`click-${t.id}`);
-                    if (clickEl) clickEl.innerHTML = badgeHtml(t.clicks, 'badge-yes-warn', 'YES', 'NO');
+                    if (clickEl) {
+                        if (t.clicks > 0)
+                            clickEl.innerHTML = `<span class="badge badge-yes-warn" title="${t.clicks} real click(s)">YES ×${t.clicks}</span>`;
+                        else if (t.bot_clicks > 0)
+                            clickEl.innerHTML = `<span class="badge badge-bot" title="Likely scanner (${t.bot_clicks} bot event)">⚠ BOT?</span>`;
+                        else
+                            clickEl.innerHTML = `<span class="badge badge-no">NO</span>`;
+                    }
                     // Submit
                     const submitEl = document.getElementById(`submit-${t.id}`);
                     if (submitEl) submitEl.innerHTML = t.submits > 0
                         ? `<span class="badge badge-yes-green">CAPTURED ✓</span>`
                         : `<span class="badge badge-no">NO</span>`;
-                    // Captured data
+                    // Captured data — all payloads
                     const dataEl = document.getElementById(`data-${t.id}`);
-                    if (dataEl && t.captured && dataEl.querySelector('.dash-placeholder')) {
-                        dataEl.innerHTML = `<details><summary>[ VIEW DATA ]</summary><pre>${JSON.stringify(t.captured, null, 2)}</pre></details>`;
+                    if (dataEl && t.captured && t.captured.length > 0 && dataEl.querySelector('.dash-placeholder')) {
+                        const entries = t.captured.map((c, i) =>
+                            `<div style="font-size:0.6rem;color:var(--text-secondary);margin:0.4rem 0 0.1rem;">${i + 1}. ${c.ts} | IP: ${c.ip || '?'}</div><pre>${JSON.stringify(c.data, null, 2)}</pre>`
+                        ).join('');
+                        dataEl.innerHTML = `<details><summary>[ ${t.captured.length} CAPTURE${t.captured.length > 1 ? 'S' : ''} ]</summary>${entries}</details>`;
                     }
                 }
             } catch (_) { }

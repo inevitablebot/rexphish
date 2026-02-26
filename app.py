@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, send_file, abort, session, Response, flash, jsonify
 from functools import wraps
 from config import Config
-from models import db, Campaign, Target, Event, FormData, EmailTemplate, SendingProfile
+from models import db, Campaign, Target, Event, FormData, EmailTemplate, SendingProfile, Contact
 from email_service import send_campaign_email
 import uuid
 import io
@@ -58,7 +58,9 @@ def dashboard():
     campaigns = Campaign.query.order_by(Campaign.created_at.desc()).all()
     templates = EmailTemplate.query.order_by(EmailTemplate.name).all()
     profiles  = SendingProfile.query.order_by(SendingProfile.name).all()
-    return render_template('dashboard.html', campaigns=campaigns, templates=templates, profiles=profiles)
+    contacts  = Contact.query.order_by(Contact.name).all()
+    return render_template('dashboard.html', campaigns=campaigns, templates=templates,
+                           profiles=profiles, contacts=contacts)
 
 @app.route('/campaign/<int:campaign_id>')
 @admin_required
@@ -196,16 +198,44 @@ def send_emails():
     sender_password = request.form.get('sender_password', '').strip()
     subject         = request.form.get('subject', '').strip() or None
     body            = request.form.get('body', '').strip() or None
-    recipient_list  = request.form.get('recipients', '').splitlines()
-    recipient_list  = [r.strip() for r in recipient_list if r.strip()]
-    template_ids    = request.form.getlist('template_ids')  # list of str IDs
-    profile_ids     = request.form.getlist('profile_ids')   # list of str IDs
+    template_ids    = request.form.getlist('template_ids')
+    profile_ids     = request.form.getlist('profile_ids')
+    contact_ids     = request.form.getlist('contact_ids')   # selected from contact book
 
-    if not sender_email or not sender_password or not recipient_list:
-        flash('Missing sender credentials or recipient list.', 'error')
+    # Build recipient map: email -> name
+    recipient_map = {}  # {email: name}
+
+    # From manual textarea
+    manual_raw = request.form.get('recipients', '').splitlines()
+    for line in manual_raw:
+        line = line.strip()
+        if not line:
+            continue
+        # Support "Name <email>" syntax
+        m = re.match(r'^(.+?)\s*<([^>]+)>$', line)
+        if m:
+            recipient_map[m.group(2).strip()] = m.group(1).strip()
+        elif '@' in line:
+            recipient_map[line] = ''
+
+    # From selected contacts
+    if contact_ids:
+        ids = [int(i) for i in contact_ids if str(i).isdigit()]
+        for c in Contact.query.filter(Contact.id.in_(ids)).all():
+            recipient_map[c.email] = c.name
+
+    if not recipient_map:
+        flash('No recipients provided.', 'error')
         return redirect(url_for('dashboard'))
 
-    # If no templates selected and no manual subject/body, block
+    if not sender_email or not sender_password:
+        # Allow no defaults when profile rotation is used
+        if not profile_ids:
+            flash('Missing sender credentials.', 'error')
+            return redirect(url_for('dashboard'))
+        sender_email = sender_email or ''
+        sender_password = sender_password or ''
+
     if not template_ids and (not subject or not body):
         flash('Provide a Subject + Body or select at least one template.', 'error')
         return redirect(url_for('dashboard'))
@@ -222,14 +252,12 @@ def send_emails():
         redirect_url=request.form.get('redirect_url', '').strip() or None
     )
 
-    # Link selected templates to the campaign
     if template_ids:
         linked_tpls = EmailTemplate.query.filter(EmailTemplate.id.in_(
             [int(i) for i in template_ids if str(i).isdigit()]
         )).all()
         new_campaign.templates = linked_tpls
 
-    # Link selected sending profiles to the campaign
     if profile_ids:
         linked_profs = SendingProfile.query.filter(SendingProfile.id.in_(
             [int(i) for i in profile_ids if str(i).isdigit()]
@@ -239,9 +267,10 @@ def send_emails():
     db.session.add(new_campaign)
     db.session.commit()
 
-    for email in recipient_list:
+    for email, name in recipient_map.items():
         tracking_id = str(uuid.uuid4())
-        target = Target(email=email, tracking_id=tracking_id,
+        target = Target(email=email, name=name or None,
+                        tracking_id=tracking_id,
                         campaign_id=new_campaign.id, status='Pending')
         db.session.add(target)
     db.session.commit()
@@ -253,24 +282,38 @@ def campaign_status(campaign_id):
     campaign = Campaign.query.get_or_404(campaign_id)
     targets = []
     for t in campaign.targets:
-        opens   = sum(1 for e in t.events if e.type == 'open')
-        clicks  = sum(1 for e in t.events if e.type == 'click')
-        submits = sum(1 for e in t.events if e.type == 'submit')
-        captured = t.form_data[0].data if t.form_data else None
+        open_events  = [e for e in t.events if e.type == 'open']
+        click_events = [e for e in t.events if e.type == 'click']
+        submits      = sum(1 for e in t.events if e.type == 'submit')
 
-        tpl_name = t.template.name if t.template else 'Default'
+        # real = not bot-suspected
+        real_opens  = [e for e in open_events  if not e.is_bot]
+        real_clicks = [e for e in click_events if not e.is_bot]
+        bot_opens   = [e for e in open_events  if e.is_bot]
+        bot_clicks  = [e for e in click_events if e.is_bot]
+
+        # All captured payloads (Fix 4)
+        all_captured = [
+            {'data': fd.data, 'ts': fd.timestamp.strftime('%H:%M:%S'), 'ip': fd.ip_address or ''}
+            for fd in t.form_data
+        ]
+
+        tpl_name  = t.template.name if t.template else 'Default'
         prof_name = t.sending_profile.name if t.sending_profile else 'Default'
 
         targets.append({
-            'id':       t.id,
-            'email':    t.email,
-            'status':   t.status or 'Pending',
-            'opens':    opens,
-            'clicks':   clicks,
-            'submits':  submits,
-            'captured': captured,
-            'template': tpl_name,
-            'sender':   prof_name,
+            'id':         t.id,
+            'email':      t.email,
+            'name':       t.name or '',
+            'status':     t.status or 'Pending',
+            'opens':      len(real_opens),
+            'clicks':     len(real_clicks),
+            'bot_opens':  len(bot_opens),
+            'bot_clicks': len(bot_clicks),
+            'submits':    submits,
+            'captured':   all_captured,
+            'template':   tpl_name,
+            'sender':     prof_name,
         })
     return jsonify({'targets': targets})
 
@@ -279,28 +322,23 @@ def send_single_target(target_id):
     target   = Target.query.get_or_404(target_id)
     campaign = target.campaign
 
-    # Pick a random profile if campaign has any linked
+    # Pick a random sending profile
     used_profile = None
-    linked_profiles = campaign.profiles
-    if linked_profiles:
-        used_profile = random.choice(linked_profiles)
+    if campaign.profiles:
+        used_profile = random.choice(campaign.profiles)
         target.sending_profile_id = used_profile.id
 
-    send_email = used_profile.email if used_profile else campaign.sender_email
+    send_email = used_profile.email    if used_profile else campaign.sender_email
     send_pass  = used_profile.password if used_profile else campaign.sender_password
 
     if not send_email or not send_pass:
-        return {'success': False, 'message': 'Missing sender credentials (no campaign default or profile assigned)'}, 400
+        return {'success': False, 'message': 'Missing sender credentials'}, 400
 
-    # Pick a random template if the campaign has any linked,
-    # OR fall back to any available template if campaign subject/body are empty
+    # Pick a random template
     used_tpl = None
-    linked_templates = campaign.templates
-
-    if linked_templates:
-        used_tpl = random.choice(linked_templates)
+    if campaign.templates:
+        used_tpl = random.choice(campaign.templates)
     elif not campaign.subject or not campaign.body:
-        # No templates explicitly linked but subject/body missing — try all templates
         all_templates = EmailTemplate.query.all()
         if all_templates:
             used_tpl = random.choice(all_templates)
@@ -316,36 +354,51 @@ def send_single_target(target_id):
     if not subject or not body:
         return {'success': False, 'message': 'No subject/body and no templates configured'}, 400
 
+    # Determine display names for placeholder substitution
+    target_name = target.name or target.email.split('@')[0]
+    sender_name = used_profile.name if used_profile else (send_email.split('@')[0])
+
     try:
         success = send_campaign_email(
-            send_email,
-            send_pass,
-            target.email,
-            subject,
-            body,
-            target.tracking_id,
-            campaign.host_url
+            send_email, send_pass,
+            target.email, subject, body,
+            target.tracking_id, campaign.host_url,
+            target_name=target_name,
+            sender_name=sender_name
         )
         target.status = 'Sent' if success else 'Failed'
+        if success:
+            target.sent_at = datetime.datetime.utcnow()
         db.session.commit()
         return {
             'success': success,
-            'status': target.status,
+            'status':   target.status,
             'template': used_tpl.name if used_tpl else 'Default',
-            'sender': used_profile.name if used_profile else 'Default'
+            'sender':   sender_name,
         }
     except Exception as e:
         target.status = 'Error'
         db.session.commit()
         return {'success': False, 'message': str(e), 'status': 'Error'}
 
+def _is_bot(target):
+    """Heuristic: if event fires within 30s of send, likely a scanner."""
+    if not target or not target.sent_at:
+        return False
+    delta = (datetime.datetime.utcnow() - target.sent_at).total_seconds()
+    return delta < 5
+
 @app.route('/track/open/<tracking_id>')
 def track_open(tracking_id):
     target = Target.query.filter_by(tracking_id=tracking_id).first()
     if target:
-        event = Event(type='open', target_id=target.id,
-                      ip_address=request.remote_addr,
-                      user_agent=request.user_agent.string)
+        event = Event(
+            type='open',
+            target_id=target.id,
+            ip_address=request.remote_addr,
+            user_agent=request.user_agent.string,
+            is_bot=_is_bot(target)
+        )
         db.session.add(event)
         db.session.commit()
     pixel = io.BytesIO(b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b')
@@ -360,18 +413,24 @@ def masked_click():
     if not target:
         return redirect('https://microsoft.com')
 
-    # Infer "open" from click — pixel is often blocked by email clients
+    bot = _is_bot(target)
+
+    # Infer "open" from click if pixel was blocked
     already_opened = Event.query.filter_by(target_id=target.id, type='open').first()
     if not already_opened:
-        open_event = Event(type='open', target_id=target.id,
-                           ip_address=request.remote_addr,
-                           user_agent=request.user_agent.string)
-        db.session.add(open_event)
+        db.session.add(Event(
+            type='open', target_id=target.id,
+            ip_address=request.remote_addr,
+            user_agent=request.user_agent.string,
+            is_bot=bot
+        ))
 
-    click_event = Event(type='click', target_id=target.id,
-                        ip_address=request.remote_addr,
-                        user_agent=request.user_agent.string)
-    db.session.add(click_event)
+    db.session.add(Event(
+        type='click', target_id=target.id,
+        ip_address=request.remote_addr,
+        user_agent=request.user_agent.string,
+        is_bot=bot
+    ))
     db.session.commit()
     host = target.campaign.host_url or request.url_root.rstrip('/')
     return redirect(f"{host}/login/{t}")
@@ -385,26 +444,30 @@ def landing_page(tracking_id):
 def submit_data(tracking_id):
     target = Target.query.filter_by(tracking_id=tracking_id).first_or_404()
     data = request.form.to_dict()
-    form_data = FormData(data=data, target_id=target.id)
+    # Always append — capture ALL submissions (Fix 4)
+    form_data = FormData(data=data, target_id=target.id, ip_address=request.remote_addr)
     db.session.add(form_data)
 
-    # Ensure open is recorded even if pixel was blocked
+    # Infer open if pixel was blocked
     already_opened = Event.query.filter_by(target_id=target.id, type='open').first()
     if not already_opened:
         db.session.add(Event(type='open', target_id=target.id,
                              ip_address=request.remote_addr,
-                             user_agent=request.user_agent.string))
+                             user_agent=request.user_agent.string,
+                             is_bot=False))
 
-    # Ensure click is recorded even if /account/verify was skipped somehow
+    # Infer click if link was not followed (direct form post)
     already_clicked = Event.query.filter_by(target_id=target.id, type='click').first()
     if not already_clicked:
         db.session.add(Event(type='click', target_id=target.id,
                              ip_address=request.remote_addr,
-                             user_agent=request.user_agent.string))
+                             user_agent=request.user_agent.string,
+                             is_bot=False))
 
     db.session.add(Event(type='submit', target_id=target.id,
                          ip_address=request.remote_addr,
-                         user_agent=request.user_agent.string))
+                         user_agent=request.user_agent.string,
+                         is_bot=False))
     db.session.commit()
     campaign = target.campaign
     if campaign and campaign.redirect_url:
@@ -443,6 +506,70 @@ def export_campaign(campaign_id):
     output.headers["Content-Disposition"] = f"attachment; filename=campaign_{campaign_id}_export.csv"
     output.headers["Content-type"] = "text/csv"
     return output
+
+# ─── Contact Book CRUD ───────────────────────────────────────────────────────
+
+@app.route('/contacts')
+@admin_required
+def contacts_list():
+    contacts = Contact.query.order_by(Contact.name, Contact.email).all()
+    return render_template('contacts.html', contacts=contacts)
+
+@app.route('/contacts/new', methods=['POST'])
+@admin_required
+def contact_new():
+    name  = request.form.get('name', '').strip()
+    email = request.form.get('email', '').strip()
+    if not email:
+        return redirect(url_for('contacts_list'))
+    # Avoid duplicate emails
+    existing = Contact.query.filter_by(email=email).first()
+    if not existing:
+        db.session.add(Contact(name=name, email=email))
+        db.session.commit()
+    return redirect(url_for('contacts_list'))
+
+@app.route('/contacts/<int:contact_id>/delete', methods=['POST'])
+@admin_required
+def contact_delete(contact_id):
+    c = Contact.query.get_or_404(contact_id)
+    db.session.delete(c)
+    db.session.commit()
+    return redirect(url_for('contacts_list'))
+
+@app.route('/contacts/delete_all', methods=['POST'])
+@admin_required
+def contact_delete_all():
+    Contact.query.delete()
+    db.session.commit()
+    return redirect(url_for('contacts_list'))
+
+@app.route('/contacts/import_csv', methods=['POST'])
+@admin_required
+def contact_import_csv():
+    f = request.files.get('csv_file')
+    if not f:
+        return redirect(url_for('contacts_list'))
+    stream = io.StringIO(f.stream.read().decode('utf-8-sig'), newline=None)
+    reader = csv.reader(stream)
+    added = 0
+    for row in reader:
+        if not row:
+            continue
+        # Accept "name,email" or just "email"
+        if len(row) >= 2:
+            name, email = row[0].strip(), row[1].strip()
+        else:
+            name, email = '', row[0].strip()
+        # Skip header rows
+        if not email or '@' not in email:
+            continue
+        if not Contact.query.filter_by(email=email).first():
+            db.session.add(Contact(name=name, email=email))
+            added += 1
+    db.session.commit()
+    flash(f'Imported {added} contacts.', 'ok')
+    return redirect(url_for('contacts_list'))
 
 # ─── Template Library CRUD ────────────────────────────────────────────────────
 

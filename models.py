@@ -29,6 +29,13 @@ class SendingProfile(db.Model):
     password   = db.Column(db.String(120), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
+class Contact(db.Model):
+    """Global, persistent contact list — survives across campaigns."""
+    id         = db.Column(db.Integer, primary_key=True)
+    name       = db.Column(db.String(120), nullable=False, default='')
+    email      = db.Column(db.String(120), nullable=False, unique=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
 class Campaign(db.Model):
     id              = db.Column(db.Integer, primary_key=True)
     name            = db.Column(db.String(100), nullable=False, default=lambda: f"Batch {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -46,18 +53,20 @@ class Campaign(db.Model):
     profiles        = db.relationship('SendingProfile', secondary=campaign_profiles, lazy='subquery')
 
 class Target(db.Model):
-    id           = db.Column(db.Integer, primary_key=True)
-    email        = db.Column(db.String(120), nullable=False)
-    tracking_id  = db.Column(db.String(36), unique=True, nullable=False)
-    campaign_id  = db.Column(db.Integer, db.ForeignKey('campaign.id'), nullable=False)
-    status             = db.Column(db.String(20), default='sent')
+    id                 = db.Column(db.Integer, primary_key=True)
+    email              = db.Column(db.String(120), nullable=False)
+    name               = db.Column(db.String(120), nullable=True)   # target's display name for {{target}}
+    tracking_id        = db.Column(db.String(36), unique=True, nullable=False)
+    campaign_id        = db.Column(db.Integer, db.ForeignKey('campaign.id'), nullable=False)
+    status             = db.Column(db.String(20), default='Pending')
+    sent_at            = db.Column(db.DateTime, nullable=True)       # timestamp when email was sent
     template_id        = db.Column(db.Integer, db.ForeignKey('email_template.id'), nullable=True)
     sending_profile_id = db.Column(db.Integer, db.ForeignKey('sending_profile.id'), nullable=True)
-    events       = db.relationship('Event', backref='target', lazy=True)
-    form_data    = db.relationship('FormData', backref='target', lazy=True)
+    events             = db.relationship('Event', backref='target', lazy=True)
+    form_data          = db.relationship('FormData', backref='target', lazy=True)
     # Relationships for rotation info
-    template     = db.relationship('EmailTemplate', lazy=True)
-    sending_profile = db.relationship('SendingProfile', lazy=True)
+    template           = db.relationship('EmailTemplate', lazy=True)
+    sending_profile    = db.relationship('SendingProfile', lazy=True)
 
 class Event(db.Model):
     id         = db.Column(db.Integer, primary_key=True)
@@ -65,10 +74,12 @@ class Event(db.Model):
     timestamp  = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     ip_address = db.Column(db.String(50))
     user_agent = db.Column(db.String(200))
+    is_bot     = db.Column(db.Boolean, default=False)  # True if likely scanner/bot
     target_id  = db.Column(db.Integer, db.ForeignKey('target.id'), nullable=False)
 
 class FormData(db.Model):
     id        = db.Column(db.Integer, primary_key=True)
     data      = db.Column(db.JSON, nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    ip_address = db.Column(db.String(50))
     target_id = db.Column(db.Integer, db.ForeignKey('target.id'), nullable=False)
