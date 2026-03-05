@@ -252,20 +252,32 @@ def send_emails():
         redirect_url=request.form.get('redirect_url', '').strip() or None
     )
 
-    if template_ids:
-        linked_tpls = EmailTemplate.query.filter(EmailTemplate.id.in_(
-            [int(i) for i in template_ids if str(i).isdigit()]
-        )).all()
-        new_campaign.templates = linked_tpls
+    # Collect junction IDs before any ORM assignment to avoid backref re-insert bugs
+    unique_tpl_ids  = list(set(int(i) for i in template_ids  if str(i).isdigit()))
+    unique_prof_ids = list(set(int(i) for i in profile_ids   if str(i).isdigit()))
 
-    if profile_ids:
-        linked_profs = SendingProfile.query.filter(SendingProfile.id.in_(
-            [int(i) for i in profile_ids if str(i).isdigit()]
-        )).all()
-        new_campaign.profiles = linked_profs
+    # Commit the bare Campaign row (no relationship assignment — avoids ORM identity-map issue)
+    try:
+        db.session.add(new_campaign)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error creating campaign: {e}', 'error')
+        return redirect(url_for('dashboard'))
 
-    db.session.add(new_campaign)
-    db.session.commit()
+    # Insert junction rows directly with OR IGNORE so duplicates are silently skipped
+    from sqlalchemy import text
+    with db.engine.connect() as conn:
+        for tid in unique_tpl_ids:
+            conn.execute(text(
+                'INSERT OR IGNORE INTO campaign_templates (campaign_id, template_id) VALUES (:c, :t)'
+            ), {'c': new_campaign.id, 't': tid})
+        for pid in unique_prof_ids:
+            conn.execute(text(
+                'INSERT OR IGNORE INTO campaign_profiles (campaign_id, profile_id) VALUES (:c, :p)'
+            ), {'c': new_campaign.id, 'p': pid})
+        conn.commit()
+
 
     for email, name in recipient_map.items():
         tracking_id = str(uuid.uuid4())
