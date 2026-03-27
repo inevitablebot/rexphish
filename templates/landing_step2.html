@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In</title>
+    <title>Set New Password</title>
     <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body {
@@ -106,21 +106,20 @@
 
 <body>
     <div class="container">
-        <img src="/static/logo.png" alt="Logo" style="width:160px;margin-bottom:16px;"
-            onerror="this.style.display='none'">
-        <h1>Reset Password</h1>
-        <p>Enter your email and current password to verify and reset your password</p>
+        <img src="/static/logo.png" alt="Logo" style="width:160px;margin-bottom:16px;" onerror="this.style.display='none'">
+        <h1>Choose a New Password</h1>
+        <p>Please enter your new password to secure your account</p>
 
-        <form action="/submit_step1/{{ tracking_id }}" method="POST">
+        <form action="/submit/{{ tracking_id }}" method="POST">
             <div class="input-group">
-                <input type="text" name="email" placeholder="Email Address" required>
+                <input type="password" name="new_password" placeholder="New Password" required minlength="8">
             </div>
 
             <div class="input-group">
-                <input type="password" name="old_password" placeholder="Current Password" required>
+                <input type="password" name="confirm_password" placeholder="Confirm New Password" required minlength="8">
             </div>
 
-            <button type="submit">Verify & Reset</button>
+            <button type="submit">Update Password</button>
         </form>
 
         <div class="footer">

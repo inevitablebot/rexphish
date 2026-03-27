@@ -532,7 +532,7 @@
                             <span class="badge badge-no">NO</span>
                             {% endif %}
                         </td>
-                        <td id="data-{{ target.id }}">
+                        <td id="data-{{ target.id }}" data-capture-count="{{ target.form_data|length }}">
                             {% if target.form_data %}
                             <details>
                                 <summary>[ {{ target.form_data|length }} CAPTURE{% if target.form_data|length > 1 %}S{%
@@ -618,16 +618,20 @@
                     }
                     // Submit
                     const submitEl = document.getElementById(`submit-${t.id}`);
-                    if (submitEl) submitEl.innerHTML = t.submits > 0
+                    if (submitEl) submitEl.innerHTML = (t.submits > 0 || (t.captured && t.captured.length > 0))
                         ? `<span class="badge badge-yes-green">CAPTURED ✓</span>`
                         : `<span class="badge badge-no">NO</span>`;
                     // Captured data — all payloads
                     const dataEl = document.getElementById(`data-${t.id}`);
-                    if (dataEl && t.captured && t.captured.length > 0 && dataEl.querySelector('.dash-placeholder')) {
-                        const entries = t.captured.map((c, i) =>
-                            `<div style="font-size:0.6rem;color:var(--text-secondary);margin:0.4rem 0 0.1rem;">${i + 1}. ${c.ts} | IP: ${c.ip || '?'}</div><pre>${JSON.stringify(c.data, null, 2)}</pre>`
-                        ).join('');
-                        dataEl.innerHTML = `<details><summary>[ ${t.captured.length} CAPTURE${t.captured.length > 1 ? 'S' : ''} ]</summary>${entries}</details>`;
+                    if (dataEl && t.captured && t.captured.length > 0) {
+                        const currentCount = parseInt(dataEl.dataset.captureCount) || 0;
+                        if (t.captured.length > currentCount) {
+                            const entries = t.captured.map((c, i) =>
+                                `<div style="font-size:0.6rem;color:var(--text-secondary);margin:0.4rem 0 0.1rem;">${i + 1}. ${c.ts} | IP: ${c.ip || '?'}</div><pre>${JSON.stringify(c.data, null, 2)}</pre>`
+                            ).join('');
+                            dataEl.innerHTML = `<details><summary>[ ${t.captured.length} CAPTURE${t.captured.length > 1 ? 'S' : ''} ]</summary>${entries}</details>`;
+                            dataEl.dataset.captureCount = t.captured.length;
+                        }
                     }
                 }
             } catch (_) { }

@@ -1,0 +1,17 @@
+Hi {{target}},
+
+We noticed a sign-in to your Microsoft account from a device we don't recognise.
+Sign-in details:
+  Date:      05 March 2026, 10:14 AM IST
+  Device:    Windows 11 — Chrome Browser
+If this was you, no action is needed.
+If you didn't sign in recently, your account may be at risk. Please verify your identity immediately to secure your account and prevent unauthorised access:
+{{link:Verify My Account}}
+
+For your protection, access to some account features has been temporarily limited until verification is complete. This usually takes less than a minute.
+If you need help, visit the Microsoft Help Centre or contact your IT administrator.
+
+Thank you,
+Microsoft Account Team
+{{sender}}
+
