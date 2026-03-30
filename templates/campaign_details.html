@@ -500,8 +500,10 @@
                             {% set bot_opens =
                             target.events|selectattr('type','equalto','open')|selectattr('is_bot')|list %}
                             {% if real_opens %}
-                            <span class="badge badge-yes-warn" title="IP: {{ real_opens[0].ip_address }}">YES ×{{
-                                real_opens|length }}</span>
+                            <span class="badge badge-yes-warn">YES ×{{ real_opens|length }}</span>
+                            {% for o in real_opens %}
+                            <div style="font-size:0.6rem; color:var(--text-secondary); margin-top:4px;">{{ loop.index }}. {{ o.timestamp.strftime('%H:%M:%S') }} | IP: {{ o.ip_address or '?' }}</div>
+                            {% endfor %}
                             {% elif bot_opens %}
                             <span class="badge badge-bot" title="Likely scanner — IP: {{ bot_opens[0].ip_address }}">⚠
                                 BOT?</span>
@@ -515,8 +517,10 @@
                             {% set bot_clicks =
                             target.events|selectattr('type','equalto','click')|selectattr('is_bot')|list %}
                             {% if real_clicks %}
-                            <span class="badge badge-yes-warn" title="IP: {{ real_clicks[0].ip_address }}">YES ×{{
-                                real_clicks|length }}</span>
+                            <span class="badge badge-yes-warn">YES ×{{ real_clicks|length }}</span>
+                            {% for c in real_clicks %}
+                            <div style="font-size:0.6rem; color:var(--text-secondary); margin-top:4px;">{{ loop.index }}. {{ c.timestamp.strftime('%H:%M:%S') }} | IP: {{ c.ip_address or '?' }}</div>
+                            {% endfor %}
                             {% elif bot_clicks %}
                             <span class="badge badge-bot" title="Likely scanner — IP: {{ bot_clicks[0].ip_address }}">⚠
                                 BOT?</span>
@@ -599,9 +603,12 @@
                     // Open — distinguish real vs bot
                     const openEl = document.getElementById(`open-${t.id}`);
                     if (openEl) {
-                        if (t.opens > 0)
-                            openEl.innerHTML = `<span class="badge badge-yes-warn" title="${t.opens} real open(s)">YES ×${t.opens}</span>`;
-                        else if (t.bot_opens > 0)
+                        if (t.opens > 0) {
+                            const entries = (t.open_details || []).map((o, i) =>
+                                `<div style="font-size:0.6rem; color:var(--text-secondary); margin-top:4px;">${i + 1}. ${o.ts} | IP: ${o.ip}</div>`
+                            ).join('');
+                            openEl.innerHTML = `<span class="badge badge-yes-warn">YES ×${t.opens}</span>${entries}`;
+                        } else if (t.bot_opens > 0)
                             openEl.innerHTML = `<span class="badge badge-bot" title="Likely scanner (${t.bot_opens} bot event)">⚠ BOT?</span>`;
                         else
                             openEl.innerHTML = `<span class="badge badge-no">NO</span>`;
@@ -609,9 +616,12 @@
                     // Click — distinguish real vs bot
                     const clickEl = document.getElementById(`click-${t.id}`);
                     if (clickEl) {
-                        if (t.clicks > 0)
-                            clickEl.innerHTML = `<span class="badge badge-yes-warn" title="${t.clicks} real click(s)">YES ×${t.clicks}</span>`;
-                        else if (t.bot_clicks > 0)
+                        if (t.clicks > 0) {
+                            const entries = (t.click_details || []).map((c, i) =>
+                                `<div style="font-size:0.6rem; color:var(--text-secondary); margin-top:4px;">${i + 1}. ${c.ts} | IP: ${c.ip}</div>`
+                            ).join('');
+                            clickEl.innerHTML = `<span class="badge badge-yes-warn">YES ×${t.clicks}</span>${entries}`;
+                        } else if (t.bot_clicks > 0)
                             clickEl.innerHTML = `<span class="badge badge-bot" title="Likely scanner (${t.bot_clicks} bot event)">⚠ BOT?</span>`;
                         else
                             clickEl.innerHTML = `<span class="badge badge-no">NO</span>`;

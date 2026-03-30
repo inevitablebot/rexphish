@@ -303,6 +303,9 @@ def campaign_status(campaign_id):
         real_clicks = [e for e in click_events if not e.is_bot]
         bot_opens   = [e for e in open_events  if e.is_bot]
         bot_clicks  = [e for e in click_events if e.is_bot]
+        
+        open_details = [{'ts': e.timestamp.strftime('%H:%M:%S'), 'ip': e.ip_address or '?'} for e in real_opens]
+        click_details = [{'ts': e.timestamp.strftime('%H:%M:%S'), 'ip': e.ip_address or '?'} for e in real_clicks]
 
         # All captured payloads (Fix 4)
         all_captured = [
@@ -319,7 +322,9 @@ def campaign_status(campaign_id):
             'name':       t.name or '',
             'status':     t.status or 'Pending',
             'opens':      len(real_opens),
+            'open_details': open_details,
             'clicks':     len(real_clicks),
+            'click_details': click_details,
             'bot_opens':  len(bot_opens),
             'bot_clicks': len(bot_clicks),
             'submits':    submits,
