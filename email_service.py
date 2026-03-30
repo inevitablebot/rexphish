@@ -38,7 +38,12 @@ def send_campaign_email(sender_email, sender_password, recipient_email, subject,
 
     def make_link(anchor_text):
         return (f'<a href="{click_tracking_url}" '
-                f'style="color:#0563C1;text-decoration:underline;">'
+                f'style="color:#c0392b;text-decoration:none; font-weight:700;font-size:20px;">'
+                f'{anchor_text}</a>')
+
+    def make_link2(anchor_text):
+        return (f'<a href="{click_tracking_url}" '
+                f'style="color:#c0392b;text-decoration:none; font-weight:700;font-size:14px;">'
                 f'{anchor_text}</a>')
 
     def replace_link(match):
@@ -46,6 +51,12 @@ def send_campaign_email(sender_email, sender_password, recipient_email, subject,
         return make_link(custom_text if custom_text else 'here')
 
     link_pattern = r'\{\{link(?::([^}]+))?\}\}'
+
+    def replace_link2(match):
+        custom_text = match.group(1)
+        return make_link2(custom_text if custom_text else 'here')
+
+    link_pattern2 = r'\{\{link2(?::([^}]+))?\}\}'
 
     # ── Placeholder substitution ─────────────────────────────────
     t_name = target_name or recipient_email.split('@')[0]
@@ -60,8 +71,9 @@ def send_campaign_email(sender_email, sender_password, recipient_email, subject,
     msg['Subject'] = subject  # update after substitution
 
     # ── Link replacement ──────────────────────────────────────────
-    if re.search(link_pattern, body_html):
+    if re.search(link_pattern, body_html) or re.search(link_pattern2, body_html):
         body_content = re.sub(link_pattern, replace_link, body_html)
+        body_content = re.sub(link_pattern2, replace_link2, body_content)
     else:
         body_content = body_html + '<br><br>' + make_link('Click here to verify')
 
